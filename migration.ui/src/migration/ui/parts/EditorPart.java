@@ -18,6 +18,9 @@ public class EditorPart {
 	public void createControls(Composite parent) 
 	{
 		m_viewer = new TreeViewer(parent, SWT.BORDER);
+		
+		
+		
 	}
 	
 	@Focus
