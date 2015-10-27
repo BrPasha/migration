@@ -1,0 +1,12 @@
+.tab{
+	-fx-background-color: blue;
+}
+
+.tab:hover{
+	-fx-background-color: red;
+}
+
+
+.tab:selected{
+	-fx-background-color: green;
+}
