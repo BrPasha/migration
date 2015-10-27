@@ -1,0 +1,68 @@
+{
+	"tables": 
+	[
+		{
+			"name": "table1",
+			"columns": 
+			[
+				{"name" : "id_primary"},
+				{"name" : "f1"},
+				{"name" : "f2"}
+			]
+		},
+		{
+			"name": "table2",
+			"columns": 
+			[
+				{"name" : "id_foreign"},
+				{"name" : "f1"},
+				{"name" : "f2"}
+			]
+		},
+		{
+			"name": "table3",
+			"columns": 
+			[
+				{"name" : "id_foreign"},
+				{"name" : "id_primary"},
+				{"name" : "id_primary2"}
+			]
+		},
+		{
+			"name": "table4",
+			"columns": 
+			[
+				{"name" : "id_foreign"},
+				{"name" : "id_foreign2"},
+				{"name" : "f2"}
+			]
+		}
+	],
+	"relations":
+	[
+		{
+			"columnPrimary": "id_primary",
+			"tablePrimary": "table1",
+			"columnForeign": "id_foreign",
+			"tableForeign": "table2"
+		},
+		{
+			"columnPrimary": "id_primary",
+			"tablePrimary": "table1",
+			"columnForeign": "id_foreign",
+			"tableForeign": "table3"
+		},
+		{
+			"columnPrimary": "id_primary",
+			"tablePrimary": "table3",
+			"columnForeign": "id_foreign",
+			"tableForeign": "table4"
+		},
+		{
+			"columnPrimary": "id_primary2",
+			"tablePrimary": "table3",
+			"columnForeign": "id_foreign2",
+			"tableForeign": "table4"
+		}
+	]
+}

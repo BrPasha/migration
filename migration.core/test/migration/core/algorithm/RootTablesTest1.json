@@ -1,0 +1,32 @@
+{
+	"tables": 
+	[
+		{
+			"name": "table1",
+			"columns": 
+			[
+				{"name" : "id_primary"},
+				{"name" : "f1"},
+				{"name" : "f2"}
+			]
+		},
+		{
+			"name": "table2",
+			"columns": 
+			[
+				{"name" : "id_foreign"},
+				{"name" : "f1"},
+				{"name" : "f2"}
+			]
+		}
+	],
+	"relations":
+	[
+		{
+			"columnPrimary": "id_primary",
+			"tablePrimary": "table1",
+			"columnForeign": "id_foreign",
+			"tableForeign": "table2"
+		}
+	]
+}
