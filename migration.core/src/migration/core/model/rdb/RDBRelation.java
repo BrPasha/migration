@@ -4,47 +4,56 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RDBRelation {
-	
-	private String m_columnPrimary;
-	private String m_tablePrimary;
-	
-	private String m_columnForeign;
-	private String m_tableForeign;
+	private String m_column1;
+	private String m_table1;
+	private String m_column2;
+	private String m_table2;
+	private RDBRelationType m_relationType;
 	
 	@JsonCreator
 	public RDBRelation(
-			@JsonProperty("columnPrimary") String columnPrimary, 
-			@JsonProperty("tablePrimary") String tablePrimary, 
-			@JsonProperty("columnForeign") String columnForeign, 
-			@JsonProperty("tableForeign") String tableForeign) {
-		m_columnPrimary = columnPrimary;
-		m_tablePrimary = tablePrimary;
-		m_columnForeign = columnForeign;
-		m_tableForeign = tableForeign;
+			@JsonProperty("table1") String table1, 
+			@JsonProperty("column1") String column1, 
+			@JsonProperty("table2") String table2,
+			@JsonProperty("column2") String column2,
+			@JsonProperty("relationType") RDBRelationType relationType) {
+		m_column1 = column1;
+		m_table1 = table1;
+		m_column2 = column2;
+		m_table2 = table2;
+		m_relationType = relationType;
 	}
 	
-	@JsonProperty("columnForeign")
-	public String getColumnForeign() {
-		return m_columnForeign;
+	@JsonProperty("column1")
+	public String getColumn1() {
+		return m_column1;
 	}
 	
-	@JsonProperty("columnPrimary")
-	public String getColumnPrimary() {
-		return m_columnPrimary;
+	@JsonProperty("column2")
+	public String getColumn2() {
+		return m_column2;
 	}
 	
-	@JsonProperty("tableForeign")
-	public String getTableForeign() {
-		return m_tableForeign;
+	@JsonProperty("table1")
+	public String getTable1() {
+		return m_table1;
 	}
 	
-	@JsonProperty("tablePrimary")
-	public String getTablePrimary() {
-		return m_tablePrimary;
+	@JsonProperty("table2")
+	public String getTable2() {
+		return m_table2;
+	}
+	
+	@JsonProperty("relationType")
+	public RDBRelationType getRelationType() {
+		return m_relationType;
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("%s(%s) <- %s(%s)", getTablePrimary(), getColumnPrimary(), getTableForeign(), getColumnForeign());
+		return String.format("%s(%s) %s %s(%s)", 
+				getTable1(), getColumn1(), 
+				getRelationType() == RDBRelationType.primaryToForeign ? "<---" : "----", 
+				getTable2(), getColumn2());
 	}
 }
