@@ -12,5 +12,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/migration.core/lib/guava-18.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.37-bin.jar" sourcepath="lib/mysql-connector-java-5.1.37-bin-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

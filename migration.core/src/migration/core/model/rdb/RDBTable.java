@@ -1,5 +1,6 @@
 package migration.core.model.rdb;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +8,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class RDBTable {
 	
 	private String m_name;
+	private String m_remarks;
 	private List<RDBColumn> m_columns;
+	private RDBPrimaryKey m_primaryKey;
+	
+	public RDBTable() {
+	}
+	
+	public RDBTable(String name, String remarks, List<RDBColumn> columns) {
+		m_name = name;
+		m_remarks = remarks;
+		m_columns = new ArrayList<>(columns);
+	}
 	
 	@JsonProperty("name")
 	public String getName() {
@@ -27,6 +39,24 @@ public class RDBTable {
 	@JsonProperty("columns")
 	public void setColumns(List<RDBColumn> columns) {
 		m_columns = columns;
+	}
+	
+	@JsonProperty("remarks")
+	public String getRemarks() {
+		return m_remarks;
+	}
+	
+	@JsonProperty("remarks")
+	public void setRemarks(String remarks) {
+		m_remarks = remarks;
+	}
+	
+	public void setPrimaryKey(RDBPrimaryKey primaryKey) {
+		m_primaryKey = primaryKey;
+	}
+	
+	public RDBPrimaryKey getPrimaryKey() {
+		return m_primaryKey;
 	}
 	
 	@Override
