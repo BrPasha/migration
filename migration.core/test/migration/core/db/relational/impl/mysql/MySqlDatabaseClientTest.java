@@ -9,10 +9,10 @@ import java.util.TreeSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import migration.core.model.mv.MVStructure;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
+import migration.core.model.transfer.Transfer;
 
 public class MySqlDatabaseClientTest {
 
@@ -23,30 +23,30 @@ public class MySqlDatabaseClientTest {
 		client = new MySqlDatabaseClient("localhost", 3306, "sakila", "mysql", "mysql");
 	}
 	
-	@Test
-	public void testGetTables() throws Exception {
-		MySqlDatabaseClient client = new MySqlDatabaseClient("localhost", 3306, "sakila", "mysql", "mysql");
-		List<RDBTable> tables = client.getTables();
-//		System.out.println(tables);
-	}
-
-	@Test
-	public void testGetRelations() throws Exception {
-		List<RDBRelation> relations = client.getRelations();
-//		relations.stream().forEach(rel -> System.out.println(rel));
-	}
-
+//	@Test
+//	public void testGetTables() throws Exception {
+//		MySqlDatabaseClient client = new MySqlDatabaseClient("localhost", 3306, "sakila", "mysql", "mysql");
+//		List<RDBTable> tables = client.getTables();
+////		System.out.println(tables);
+//	}
+//
+//	@Test
+//	public void testGetRelations() throws Exception {
+//		List<RDBRelation> relations = client.getRelations();
+////		relations.stream().forEach(rel -> System.out.println(rel));
+//	}
+//
 	@Test
 	public void test3() throws Exception {
 		List<RDBTable> tables = client.getTables();
 		List<RDBRelation> relations = client.getRelations();
 		RDBStructure structure = new RDBStructure(tables, relations);
-		List<MVStructure> proposedConversions = structure.proposeConversions();
-		Set<MVStructure> structures = new HashSet<>(proposedConversions);
-		TreeSet<MVStructure> orderedStructures = new TreeSet<>(new Comparator<MVStructure>() {
+		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
+		Set<Set<Transfer>> structures = new HashSet<>(transformations);
+		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>(new Comparator<Set<Transfer>>() {
 			@Override
-			public int compare(MVStructure o1, MVStructure o2) {
-				return o1.weight(structure.getRelations()) - o2.weight(structure.getRelations()) > 0 ? 1 : -1;
+			public int compare(Set<Transfer> o1, Set<Transfer> o2) {
+				return getWeight(o1, structure) - getWeight(o2, structure) > 0 ? 1 : -1;
 			}
 		});
 		orderedStructures.addAll(structures);
@@ -54,8 +54,12 @@ public class MySqlDatabaseClientTest {
 		
 		orderedStructures.stream().forEach(s -> {
 			System.out.println();
-			s.getTables().stream().forEach(table -> System.out.println(table.getSourceTables()));
-			System.out.println(s.weight(structure.getRelations()));
+			s.stream().forEach(transfer -> System.out.println(transfer.getBaseTable() + ": " + transfer.getEmbeddedTables()));
+			System.out.println(s.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum());
 		});
+	}
+	
+	private double getWeight(Set<Transfer> transfers, RDBStructure structure) {
+		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 }
