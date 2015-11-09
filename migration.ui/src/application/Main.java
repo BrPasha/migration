@@ -2,7 +2,6 @@ package application;
 
 import editors.controls.FileNode;
 import editors.controls.TableNode;
-import editors.database.DatabaseEditor;
 import editors.models.ColumnModel;
 import editors.models.FieldModel;
 import editors.models.FileModel;
@@ -12,7 +11,6 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -28,12 +26,7 @@ public class Main extends Application {
 
 			primaryStage.setScene(scene);
 			primaryStage.show();
-			
-			AnchorPane pane = (AnchorPane)scene.lookup("#database");
-			DatabaseEditor dbEditor = new DatabaseEditor(pane);
-			dbEditor.activate();
-			
-			
+					
 			final Pane editor = (Pane)scene.lookup("#editor");
 			
 //			final ScrollPane tab = (ScrollPane)scene.lookup("#tab");

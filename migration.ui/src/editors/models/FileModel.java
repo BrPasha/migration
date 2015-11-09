@@ -1,9 +1,5 @@
 package editors.models;
 
-import java.beans.PropertyChangeListener;
-
-import org.eclipse.gef4.common.properties.IPropertyChangeNotifier;
-
 /**
  * <pre>
  * Title: TableModel
@@ -14,7 +10,6 @@ import org.eclipse.gef4.common.properties.IPropertyChangeNotifier;
  * @author pgizatullin
  */
 public class FileModel
-    implements IPropertyChangeNotifier
 {
     
     private String name;
@@ -31,20 +26,6 @@ public class FileModel
     
     public FieldModel[] getFields(){
         return fields;
-    }
-    
-    @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        // TODO Auto-generated method stub
-
     }
 
 }
