@@ -3,6 +3,7 @@ package migration.core.model.rdb;
 import static migration.core.util.Misc.permutationsFloatingSize;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +74,8 @@ public class RDBStructure {
 	
 	public List<MVStructure> proposeConversions() {
 		List<MVStructure> structures = new ArrayList<>();
-		for (List<RDBTable> tables : Collections2.permutations(m_tables)) {
+		Collection<List<RDBTable>> permutations = Collections2.permutations(m_tables);
+		for (List<RDBTable> tables : permutations) {
 			LinkedList<RDBTable> remainingTables = new LinkedList<>(tables);
 			if (!remainingTables.isEmpty()) {
 				RDBTable table = remainingTables.pop();
