@@ -25,6 +25,10 @@ public class FieldModel
         return name;
     }
     
+    public void setName(String value){
+       name = value;
+    }
+    
     public String getTable(){
         return table;
     }

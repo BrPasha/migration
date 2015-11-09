@@ -180,6 +180,45 @@
 	-fx-border-color: #418CC5;
 }
 
+.file-node:hover {
+	-fx-border-color: #99FFA1;
+}
+
+.file-node{
+	-fx-border-width: 1;
+	-fx-border-color: #76A348;
+}
+
+.column-field{
+	-fx-background-color: #669933;
+	-fx-text-fill: white;
+}
+
+.table-fields{
+	-fx-background-color: transparent;
+}
+
+.table-fields .column-header .label {
+	-fx-background-color: #669933;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-fields .scroll-bar{
+	-fx-background-color:  #669933;
+}
+
+.table-fields .column-header-background .filler {
+  -fx-background-color:  #669933;
+  -fx-padding: 1em;
+}
+
+.table-view .scroll-bar:vertical > .increment-button, 
+.table-view .scroll-bar:vertical > .decrement-button {
+    -fx-padding: 0.25em 0.25em  ;
+}
+
 /****************************************************************
  
   ScrollBar Skin  
