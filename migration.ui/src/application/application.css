@@ -205,18 +205,11 @@
     -fx-alignment: CENTER_LEFT;
 }
 
-.table-fields .scroll-bar{
-	-fx-background-color:  #669933;
-}
+
 
 .table-fields .column-header-background .filler {
   -fx-background-color:  #669933;
   -fx-padding: 1em;
-}
-
-.table-view .scroll-bar:vertical > .increment-button, 
-.table-view .scroll-bar:vertical > .decrement-button {
-    -fx-padding: 0.25em 0.25em  ;
 }
 
 /****************************************************************
@@ -295,4 +288,17 @@
 .scroll-bar:vertical:focused,
 .scroll-bar:horizontal:focused {
  -fx-background-color: transparent,rgb(96,96,96),rgb(96,96,96);
+}
+
+.scroll-bar:vertical > .increment-button, 
+.scroll-bar:vertical > .decrement-button {
+    -fx-padding: 0.25em 0.25em  ;
+}
+
+.table-node .scroll-bar{
+	-fx-background-color:  #2D7EBE;
+}
+
+.table-fields .scroll-bar{
+	-fx-background-color:  #669933;
 }

@@ -2,10 +2,8 @@ package application;
 
 import editors.controls.FileNode;
 import editors.controls.TableNode;
-import editors.models.ColumnModel;
 import editors.models.FieldModel;
 import editors.models.FileModel;
-import editors.models.TableModel;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -17,18 +15,21 @@ import javafx.stage.Stage;
 
 
 public class Main extends Application {
-	@Override
+    
+    @Override
 	public void start(Stage primaryStage) {
 		try {
-			BorderPane root = (BorderPane)FXMLLoader.load(getClass().getResource("Application.fxml"));
+		    
+	        FXMLLoader loader = new FXMLLoader();
+	        ApplicationController controller = new ApplicationController();
+	        loader.setController(controller);
+	        loader.setLocation(getClass().getResource("Application.fxml"));
+			BorderPane root = (BorderPane)loader.load();
 			Scene scene = new Scene(root, 1000, 600);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 
 			primaryStage.setScene(scene);
 			primaryStage.show();
-					
-			final Pane editor = (Pane)scene.lookup("#editor");
-			
 //			final ScrollPane tab = (ScrollPane)scene.lookup("#tab");
 //			tab.viewportBoundsProperty().addListener(new ChangeListener<Bounds>() {
 //              @Override public void changed(ObservableValue<? extends Bounds> bounds, Bounds oldBounds, Bounds newBounds) {
@@ -62,31 +63,34 @@ public class Main extends Application {
 //
 //	        root.getChildren().add(quad);
 	        
-			EventHandler handler = new EventHandler<MouseEvent>() {
-			      public void handle(MouseEvent event) {
-			          editor.getChildren().add(createTable(event.getX(), event.getY()));
-			      }
-			    };
-			editor.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
-			
+//			EventHandler handler = new EventHandler<MouseEvent>() {
+//			      public void handle(MouseEvent event) {
+//			          editor.getChildren().add(createTable(event.getX(), event.getY()));
+//			      }
+//			    };
+//			editor.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
+//			
 			final Pane editorFile = (Pane)scene.lookup("#u2schema");
 			editorFile.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
                           public void handle(MouseEvent event) {
                               editorFile.getChildren().add(createFile(event.getX(), event.getY()));
                           }
             });
+			controller.showTables();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
+
+    
 	public TableNode createTable(double x, double y){
-        TableModel model = new TableModel("Table1", new ColumnModel[] {new ColumnModel("column1"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2")});
-        TableNode control = new TableNode(model);
-        control.setLayoutX(x);
-        control.setLayoutY(y);
-        control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
-        return control;
+//        TableModel model = new TableModel("Table1", new ColumnModel[] {new ColumnModel("column1"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2"),new ColumnModel("column2")});
+//        TableNode control = new TableNode(model);
+//        control.setLayoutX(x);
+//        control.setLayoutY(y);
+//        control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
+        return null;
 	}
 	
     public FileNode createFile(double x, double y){
