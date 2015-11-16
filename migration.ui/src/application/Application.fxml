@@ -9,14 +9,17 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Background?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"  minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0"  
+	xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8" >
    <top>
       <BorderPane prefHeight="66.0" prefWidth="600.0" style="-fx-background-color: #0B2D5A;" BorderPane.alignment="CENTER">
          <left>
-            <ImageView fitHeight="58.0" fitWidth="65.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER_RIGHT">
+            <ImageView fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" translateX="15.0" BorderPane.alignment="CENTER_RIGHT">
                <image>
-                  <Image url="@../../icon/rocket.png" />
+                  <Image url="@../../icon/Rocket25.png" />
                </image>
                <BorderPane.margin>
                   <Insets left="10.0" />
@@ -24,9 +27,9 @@
             </ImageView>
          </left>
          <center>
-            <Label lineSpacing="10.0" text="MSSQL To MultiValue" textFill="WHITE" BorderPane.alignment="CENTER_LEFT">
+            <Label lineSpacing="10.0" text="SQL to MultiValue" textFill="WHITE" BorderPane.alignment="CENTER_LEFT">
                <font>
-                  <Font name="System Bold" size="27.0" />
+                  <Font name="Trebuchet MS" size="27.0" />
                </font>
                <padding>
                   <Insets left="30.0" />
@@ -34,11 +37,19 @@
             </Label>
          </center>
          <right>
-            <Button contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="30.0" prefWidth="32.0" styleClass="button-info" text="i" textAlignment="CENTER" textOverrun="CLIP" BorderPane.alignment="CENTER_RIGHT">
-               <font>
-                  <Font name="System Bold" size="14.0" />
-               </font>
-            </Button>
+            <Pane translateY="13">
+      				<children>
+      					<Button fx:id="btn_Info" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="30.0" prefWidth="32.0" styleClass="button-info" text="i" textAlignment="CENTER" textOverrun="CLIP" translateX="25.0" BorderPane.alignment="CENTER_RIGHT">
+          					<font>
+            					<Font name="Trebuchet MS" size="14.0" style="bold"/>
+          					</font>
+        				</Button>
+        				<Button fx:id="btn_Settings" prefHeight="30.0" prefWidth="32.0" translateX="-20" 
+        					BorderPane.alignment="CENTER_LEFT" onMouseClicked="#btn_Settings_clicked"
+							styleClass="button-settings">
+        				</Button>
+      				</children>
+      			</Pane>
          </right>
          <padding>
             <Insets bottom="10.0" right="50.0" top="10.0" />
@@ -76,7 +87,7 @@
                <center>
                   <TabPane fx:id="rdbTabPane" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0A2447;" styleClass="tab-database" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
                      <BorderPane.margin>
-                        <Insets left="20.0" right="10.0" />
+                        <Insets left="30.0" right="10.0" />
                      </BorderPane.margin>
                   </TabPane>
                </center>
@@ -88,19 +99,29 @@
                      <center>
                         <TextArea prefHeight="200.0" prefWidth="200.0" text="Robben, 31, scored with an individual effort after 35 minutes and Arturo Vidal added a second before half-time" wrapText="true" BorderPane.alignment="CENTER" />
                      </center>
+                     <right>
+                		<Button fx:id="btn_Migrate" mnemonicParsing="false" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="MIGRATE" BorderPane.alignment="CENTER">
+                  			<font>
+                    			<Font name="Trebuchet MS" size="18.0" />
+                  			</font>
+                  		<BorderPane.margin>
+                    		<Insets left="10.0" />
+                  		</BorderPane.margin>
+                		</Button>
+                	</right>
                   </BorderPane>
                </bottom>
             </BorderPane>
             <BorderPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0B2D5A;" GridPane.columnIndex="1">
                <top>
-                  <FlowPane prefHeight="30.0" prefWidth="300.0" BorderPane.alignment="CENTER">
+                  <FlowPane prefHeight="40.0" prefWidth="300.0" BorderPane.alignment="CENTER">
                      <children>
                         <Label text="U2 Schema" textFill="WHITE">
                            <font>
                               <Font size="20.0" />
                            </font>
                            <FlowPane.margin>
-                              <Insets left="30.0" top="10.0" />
+                              <Insets left="20.0" top="10.0" />
                            </FlowPane.margin>
                         </Label>
                      </children>
@@ -109,23 +130,33 @@
                <center>
                   <TabPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
                     <tabs>
-                      <Tab text="Variant 1">
-                        <content>
-                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     	<Tab text="VARIANT 1" >
+                        	<content>
+                          		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                  <children>
                                     <Pane id="u2schema" style="-fx-background-color: #0A2447;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                                  </children></AnchorPane>
-                        </content>
-                      </Tab>
-                      <Tab text="Variant 2">
-                        <content>
-                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                        </content>
-                      </Tab>
+                        	</content>
+                      	</Tab>
+                      	<Tab text="VARIANT 2">
+                  			<content>
+                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                  			</content>
+                		</Tab>
+                		<Tab text="VARIANT 3">
+                  			<content>
+                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                  			</content>
+                		</Tab>
+                		<Tab text="VARIANT 4">
+                 			<content>
+                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                  			</content>
+                  		</Tab>
                     </tabs>
-                     <BorderPane.margin>
-                        <Insets left="10.0" right="20.0" />
-                     </BorderPane.margin>
+                    <BorderPane.margin>
+                        <Insets left="20.0" right="30.0" />
+                    </BorderPane.margin>
                   </TabPane>
                </center>
                <bottom>
@@ -137,19 +168,19 @@
                            </BorderPane.margin>
                         </TextArea>
                      </center>
-                     <BorderPane.margin>
-                        <Insets bottom="20.0" left="10.0" right="20.0" top="10.0" />
-                     </BorderPane.margin>
                      <right>
-                        <Button mnemonicParsing="false" prefWidth="150.0" styleClass="button-export" text="EXPORT" BorderPane.alignment="CENTER">
-                           <BorderPane.margin>
-                              <Insets left="40.0" />
-                           </BorderPane.margin>
-                           <font>
-                              <Font size="18.0" />
-                           </font>
-                        </Button>
-                     </right>
+                		<Button fx:id="btn_Export" mnemonicParsing="false" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="EXPORT" BorderPane.alignment="CENTER">
+                  			<font>
+                    			<Font name="Trebuchet MS" size="18.0" />
+                  			</font>
+                  		<BorderPane.margin>
+                    		<Insets left="10.0" />
+                  		</BorderPane.margin>
+                		</Button>
+              		 </right>
+              		 <BorderPane.margin>
+                        <Insets bottom="20.0" left="10.0" right="30.0" top="10.0" />
+                     </BorderPane.margin>
                   </BorderPane>
                </bottom>
             </BorderPane>
