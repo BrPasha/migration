@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.TextInputControl?>
+<?import javafx.scene.control.ComboBox?>
+<?import com.sun.javafx.scene.control.skin.InputField?>
+<?import javafx.scene.control.PasswordField?>
+
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" style="-fx-background-color: #0B2D5A;"
+	prefHeight="600.0" prefWidth="800.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2"
+	fx:controller="application.SettingsController" >
+  <top>
+  	<BorderPane prefHeight="80.0" prefWidth="800.0" style="-fx-background-color: #0B2D5A;">
+  		<center>
+        	<Label contentDisplay="CENTER" text="SQL to MultiValue" textFill="WHITE" BorderPane.alignment="CENTER_LEFT" >
+          		<font>
+          			<Font name="Trebuchet MS" size="27.0"></Font>
+          		</font>
+          		<BorderPane.margin>
+            		<Insets left="25.0" />
+          		</BorderPane.margin>
+        	</Label>
+      	</center>
+      	<left>
+        	<ImageView fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" translateX="15.0" BorderPane.alignment="CENTER_RIGHT">
+          		<image>
+	            	<Image url="@../../icon/Rocket25.png" />
+          		</image>
+        	</ImageView>
+      	</left>
+      	<padding>
+        	<Insets bottom="10.0" right="50.0" top="10.0" />
+      	</padding>
+     	<right>
+      		<Label BorderPane.alignment="CENTER_RIGHT" contentDisplay="CENTER" text="Settings" textFill="WHITE" translateX="35">
+          		<font>
+            		<Font name="Trebuchet MS" size="20.0" />
+          		</font>
+          	</Label>
+          	<BorderPane.margin>
+          		<Insets right="20"></Insets>
+          	</BorderPane.margin>
+      	</right>
+  	</BorderPane>
+  	<BorderPane.margin>
+          <Insets bottom="20"></Insets>
+    </BorderPane.margin>
+  </top>
+  <center>
+    <GridPane BorderPane.alignment="CENTER">
+    <children>
+        <BorderPane prefHeight="530.0" prefWidth="400.0" style="-fx-background-color: #0B2D5A;">     
+        	<center>
+            	<TabPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #0A2447;" styleClass="tab-relational" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+              		<tabs>
+                		<Tab text="RELATIONAL">
+                  		<content>
+                  			<Pane >
+                  				<Label text="Host:" styleClass="label-relational" translateY="10" > </Label>
+                  				<TextField fx:id="txt_r_host" styleClass="text-relational" translateY="30"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Port:" styleClass="label-relational" translateY="65" ></Label>
+                  				<TextField fx:id="txt_r_port" styleClass="text-relational" translateY="85"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Database name:" styleClass="label-relational" translateY="120" ></Label>
+                  				<TextField fx:id="txt_r_dbname" styleClass="text-relational" translateY="140"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Schema:" styleClass="label-relational" translateY="175" ></Label>
+                  				<ComboBox styleClass="text-relational" translateY="195">
+                  				</ComboBox>
+                  				<Label text="Enter database user name and password:" styleClass="label-relational" translateY="280" ></Label>
+                  				<TextField fx:id="txt_r_user" styleClass="text-relational" translateY="305"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<PasswordField fx:id="txt_r_pswd" styleClass="text-relational" translateY="345"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</PasswordField>
+                  			
+                  			</Pane>
+                  		</content>
+                		</Tab>
+              		</tabs>
+              		<BorderPane.margin>
+                		<Insets left="50.0" right="10.0" bottom="80" />
+              		</BorderPane.margin>
+            	</TabPane>
+          	</center>
+     	</BorderPane>
+     	<BorderPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #0B2D5A;" GridPane.columnIndex="1">
+     		<center>
+            	<TabPane prefHeight="500.0" prefWidth="400.0" style="-fx-background-color: #0A2447;" styleClass="tab-mv" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+              		<tabs>
+                		<Tab text="MULTIVALUE">
+                  		<content>
+                  			<Pane >
+                  				<Label text="Host:" styleClass="label-relational" translateY="10" > </Label>
+                  				<TextField fx:id="txt_mv_host" styleClass="text-mv" translateY="30"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Port:" styleClass="label-relational" translateY="65" ></Label>
+                  				<TextField fx:id="txt_mv_port" styleClass="text-mv" translateY="85" 
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Account:" styleClass="label-relational" translateY="120" ></Label>
+                  				<TextField fx:id="txt_mv_account" styleClass="text-mv" translateY="140"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<Label text="Enter database user name and password:" styleClass="label-relational" translateY="280" ></Label>
+                  				<TextField fx:id="txt_mv_user" styleClass="text-mv" translateY="305"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</TextField>
+                  				<PasswordField fx:id="txt_mv_pswd" styleClass="text-mv" translateY="345"
+                  					onKeyTyped="#txt_keyTyped">
+                  				</PasswordField>
+                  			</Pane>
+                  		</content>
+                		</Tab>
+              		</tabs>
+              		<BorderPane.margin>
+                		<Insets left="10.0" right="50.0" bottom="20" />
+              		</BorderPane.margin>
+            	</TabPane>
+          	</center>
+          	<bottom>
+          		<BorderPane >
+          			<right>
+          				<GridPane >
+          					<children>
+          						<Button text="CANCEL" styleClass="button-cancel" 
+          							onMouseClicked="#btn_CancelClicked">
+          						</Button>
+          						<Button fx:id="btn_OK" text="OK" translateX="-130" styleClass="button-cancel" onMouseClicked="#btn_OkClicked">
+          						</Button>
+          					</children>
+                  		</GridPane>
+                  		<BorderPane.margin>
+                    				<Insets right="30.0" bottom="20"/>
+                  				</BorderPane.margin>
+          			</right>
+          		</BorderPane>
+          	</bottom>
+     	</BorderPane>
+     </children>
+     
+    </GridPane>
+  </center>
+  
+</BorderPane>
