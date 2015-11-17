@@ -1,9 +1,12 @@
 package editors.controls;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -35,6 +38,39 @@ public class TableNode extends UserControl
     @FXML
     private HBox hboxHeader;
     
+    private ReadOnlyBooleanWrapper selected;
+   
+    protected final void setSelected(boolean value) {
+        selectedPropertyImpl().set(value);
+    }
+        
+    public final boolean isSelected() {
+        return selected == null ? false : selected.get();
+    }
+        
+    public final ReadOnlyBooleanProperty selectedProperty() {
+        return selectedPropertyImpl().getReadOnlyProperty();
+    }
+    
+    private ReadOnlyBooleanWrapper selectedPropertyImpl() {
+        if (selected == null) {
+            selected = new ReadOnlyBooleanWrapper(){
+                 @Override
+                public String getName()
+                {
+                    return "selected";
+                }   
+                
+                 @Override
+                public Object getBean()
+                {
+                    return TableNode.this;
+                }
+            };
+        }
+        return selected;
+    }
+    
     public TableNode(RDBTable model){
         super();
         m_model = model;
@@ -53,6 +89,11 @@ public class TableNode extends UserControl
     protected Node getHeaderNode()
     {
         return hboxHeader;
+    }
+    
+    @FXML
+    private void onMouseClicked(MouseEvent event){
+        setSelected(!isSelected());
     }
 }
 

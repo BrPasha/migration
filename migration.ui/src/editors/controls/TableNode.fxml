@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.image.*?>
@@ -8,61 +9,65 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <HBox fx:id="hboxHeader" alignment="CENTER_LEFT" style="-fx-background-color: #418CC5;">
-         <children>
-            <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../../../icon/table_32x32.png" />
-               </image>
-               <HBox.margin>
-                  <Insets bottom="10.0" left="10.0" right="5.0" top="10.0" />
-               </HBox.margin>
-            </ImageView>
-            <Label id="table_name" fx:id="labelTitle" styleClass="white-text" text="Label" textFill="WHITE">
-               <HBox.margin>
-                  <Insets left="5.0" right="10.0" />
-               </HBox.margin>
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </Label>
-         </children>
-      </HBox>
-      <AnchorPane maxHeight="150.0">
-         <VBox.margin>
-            <Insets left="10.0" right="10.0" top="5.0" />
-         </VBox.margin>
-         <children>
-            <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" style="-fx-background-color: #2D7EBE;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-               <content>
-                  <VBox fx:id="vboxColumns" alignment="TOP_CENTER" style="-fx-background-color: #2D7EBE;">
-                     <children>
-                        <Label text="Label" textFill="WHITE" />
-                     </children>
-                     <padding>
-                        <Insets left="20.0" right="20.0" />
-                     </padding>
-                  </VBox>
-               </content>
-            </ScrollPane>
-         </children>
-      </AnchorPane>
-      <VBox alignment="CENTER_RIGHT">
-         <children>
-            <ImageView fitHeight="8.0" fitWidth="8.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../../../icon/triangle.png" />
-               </image>
-            </ImageView>
-         </children>
-         <padding>
-            <Insets bottom="5.0" />
-         </padding>
-         <VBox.margin>
-            <Insets left="10.0" right="10.0" />
-         </VBox.margin>
-      </VBox>
-   </children>
-</VBox>
+<BorderPane maxHeight="200.0" style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+    <bottom>
+       <VBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
+          <children>
+             <ImageView fx:id="resizeImage" fitHeight="8.0" fitWidth="8.0" onMouseDragged="#onMouseDraggedResizeImage" onMousePressed="#onMousePressedResizeImage" onMouseReleased="#onMouseReleasedResizeImage" pickOnBounds="true" preserveRatio="true">
+                <image>
+                   <Image url="@../../../icon/triangle.png" />
+                </image>
+                <cursor>
+                   <Cursor fx:constant="SE_RESIZE" />
+                </cursor>
+             </ImageView>
+          </children>
+          <padding>
+             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+          </padding>
+       </VBox>
+    </bottom>
+    <center>
+       <AnchorPane BorderPane.alignment="CENTER">
+          <children>
+             <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" style="-fx-background: #2D7EBE; -fx-border-color: #2D7EBE;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <content>
+                   <VBox fx:id="vboxColumns" alignment="TOP_CENTER" style="-fx-background-color: #2D7EBE;">
+                      <children>
+                         <Label text="Label" textFill="WHITE" />
+                      </children>
+                      <padding>
+                         <Insets left="20.0" right="20.0" />
+                      </padding>
+                   </VBox>
+                </content>
+             </ScrollPane>
+          </children>
+         <BorderPane.margin>
+            <Insets left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+       </AnchorPane>
+    </center>
+    <top>
+       <HBox fx:id="hboxHeader" alignment="CENTER_LEFT" style="-fx-background-color: #418CC5;" BorderPane.alignment="CENTER">
+          <children>
+             <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
+                <image>
+                   <Image url="@../../../icon/table_32x32.png" />
+                </image>
+                <HBox.margin>
+                   <Insets bottom="10.0" left="10.0" right="5.0" top="10.0" />
+                </HBox.margin>
+             </ImageView>
+             <Label id="table_name" fx:id="labelTitle" styleClass="white-text" text="Label" textFill="WHITE">
+                <HBox.margin>
+                   <Insets left="5.0" right="10.0" />
+                </HBox.margin>
+                <font>
+                   <Font size="16.0" />
+                </font>
+             </Label>
+          </children>
+       </HBox>
+    </top>
+ </BorderPane>

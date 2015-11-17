@@ -74,38 +74,6 @@
     -fx-background-color: #0B2D5A;
 }
 
-/* tabs */
-/* .tab-database .tab{
-	-fx-background-color: -fx-main-background;    
-}
-
-
-
-.tab:hover{
-	-fx-background-color: 9BD5FF;    
-}
-
-* */
-
-/*.tab:selected{
-	-fx-color: FFFFFF;    
-}
-
-/* Remove left gap 
-.tab-pane:top *.tab-header-area {
-    -fx-background-insets: 0, 0 0 1 0;
-    -fx-padding: 0.416667em 0.166667em 0.0em 0.0em;
-}
-
-.tab .tab-label { 
-    -fx-alignment: CENTER;
-    -fx-text-fill: white;
-}
-
-
-
-*/
-
 .tab{
 	-fx-background-color: -fx-main-background;
 	-fx-border-radius: 0 0 0 0;
@@ -174,6 +142,11 @@
 .table-node:hover {
 	-fx-border-color: #9BD5FF;
 }
+
+.table-node:selected {
+	-fx-border-color: red;
+}
+
 
 .table-node{
 	-fx-border-width: 1;
