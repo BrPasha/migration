@@ -1,0 +1,122 @@
+/* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+*{
+   -fx-main-background: #0B2D5A;
+}
+
+.tab{
+	-fx-background-color: -fx-main-background;
+	-fx-border-radius: 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+    -fx-effect: null;
+    -fx-font-weight: bold
+}
+
+.tab-relational .tab:hover{
+	-fx-background-color: #9BD5FF;
+}
+
+.tab-relational .tab-content-area {
+	-fx-border-width: 2 2 2 2;
+	-fx-border-color: #0099FF;
+}
+
+.tab-relational .tab:selected{
+	-fx-background-color: #0099FF;
+	-fx-border-width: 0;
+	-fx-background-insets: 0 0 -1 0
+}
+
+.tab-mv .tab-content-area{
+	-fx-border-width: 2 2 2 2;
+	-fx-border-color: #00cc00;
+}
+
+.tab-mv .tab:selected{
+	-fx-background-color: #00cc00;
+	-fx-border-width: 0;
+	-fx-background-insets: 0 0 -1 0
+}
+
+.text-relational {
+	-fx-background-color: #418bc4;
+	-fx-text-fill: #c8c8c8;
+	-fx-translate-x: 15;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 14;
+	-fx-font-style: italic;
+	-fx-pref-width: 310;
+}
+
+.text-mv {
+	-fx-background-color: #76a348;
+	-fx-text-fill: #c8c8c8;
+	-fx-translate-x: 15;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 14;
+	-fx-font-style: italic;
+	-fx-pref-width: 310
+}
+/*
+.text-mv:focused{
+	-fx-text-fill: white;
+}
+ */
+
+.label-relational{
+	-fx-text-fill: white;
+	-fx-translate-x: 15;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 14;
+}
+
+.button-cancel {
+	-fx-background-color: #0b2d59; 
+	-fx-background-radius: 0;
+	-fx-border-color: white; 
+	-fx-border-width: 2;
+	-fx-border-radius: 0;
+	-fx-text-fill: white;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 18;
+	-fx-pref-width: 100.0;
+	-fx-pref-height: 25.0;
+}
+
+.button-cancel:disabled{
+	-fx-background-color: #092447; 
+	-fx-border-color: #b2b2b2;
+	-fx-text-fill: #b2b2b2;
+}
+/*
+.button-cancel :enabled{
+	-fx-background-color: #0b2d59; 
+}
+*/
+.button-cancel:hover{
+	-fx-background-color: #092447;
+}
+
+.tab-label{
+	-fx-padding: 0 10 0 10;
+}
+
+.tab-pane{
+	-fx-tab-min-height: 25
+}
+
+.tab-pane *.tab-header-background {
+    -fx-background-color: #0B2D5A;
+}
+
+.tab .tab-label { 
+    -fx-alignment: CENTER;
+    -fx-text-fill: white;
+}
+
+/* Remove left gap  */
+.tab-pane:top *.tab-header-area {
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.416667em 0.166667em 0.0em 0.0em;
+}
+
+

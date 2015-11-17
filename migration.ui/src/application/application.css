@@ -3,17 +3,6 @@
    -fx-main-background: #0B2D5A;
 }
 
-.button-export{
-	-fx-background-color: green; 
-	-fx-border-color: black; 
-	-fx-border-width: 3;
-}
-
-.button-export:hover{
-	-fx-background-color: red; 
-}
-
-
 .button-info{
 	-fx-background-color: -fx-main-background; 
 	-fx-background-radius: 15;
@@ -24,9 +13,23 @@
 }
 
 .button-info:hover{
-	-fx-background-color: white; 
-	-fx-text-fill: -fx-main-background;
-	-fx-border-width: 0;
+	-fx-background-color: #092447; 
+}
+
+.button-settings{
+	-fx-background-color: -fx-main-background; 
+	-fx-background-radius: 15;
+	-fx-border-color: white; 
+	-fx-border-width: 2;
+	-fx-border-radius: 15;
+	-fx-text-fill: white;
+	-fx-background-image: url("../../icon/settings.png");  
+	-fx-background-size: 35,35;
+	-fx-background-position: center;
+}
+
+.button-settings:hover{
+	-fx-background-color: #092447; 
 }
 
 .button-export{
@@ -39,9 +42,7 @@
 }
 
 .button-export:hover{
-	-fx-background-color: white; 
-	-fx-text-fill: -fx-main-background;
-	-fx-border-width: 0;
+	-fx-background-color: #092447;
 }
 
 .background-default{
@@ -93,7 +94,7 @@
 .tab-database .tab:selected{
 	-fx-background-color: #0099FF;
 	-fx-border-width: 0;
-	-fx-background-insets: 0 0 -1 0
+	-fx-background-insets: 0 0 -1 0;
 }
 
 .tab-u2 .tab:hover{
@@ -105,11 +106,13 @@
 	-fx-background-color: #02CD02;
 	-fx-border-width: 0;
 	-fx-background-insets: 0 0 -1 0
+	
 }
 
 .tab-u2 .tab-content-area {
 	-fx-border-width: 1 0 0 0;
 	-fx-border-color: #02CD02;
+
 }
 
 .tab-label{
@@ -127,6 +130,7 @@
 .tab .tab-label { 
     -fx-alignment: CENTER;
     -fx-text-fill: white;
+    -fx-font-weight: bold
 }
 
 /* Remove left gap  */

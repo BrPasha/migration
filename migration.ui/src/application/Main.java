@@ -8,6 +8,7 @@ import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -18,7 +19,7 @@ public class Main extends Application {
     
     @Override
 	public void start(Stage primaryStage) {
-		try {
+		try { 
 		    
 	        FXMLLoader loader = new FXMLLoader();
 	        ApplicationController controller = new ApplicationController();
@@ -29,6 +30,8 @@ public class Main extends Application {
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 
 			primaryStage.setScene(scene);
+			primaryStage.setTitle("Migration Tool");
+			primaryStage.getIcons().add(new Image("file:icon/Rocket25.png"));
 			primaryStage.show();
 //			final ScrollPane tab = (ScrollPane)scene.lookup("#tab");
 //			tab.viewportBoundsProperty().addListener(new ChangeListener<Bounds>() {
