@@ -1,40 +1,40 @@
 package migration.core.model.mv;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import migration.core.model.rdb.RDBTable;
-
 public class MVTable {
-	private List<RDBTable> m_sources = new ArrayList<>();
+	private String m_name;
+	private List<MVColumn> m_columns = new ArrayList<>();
 
-	public MVTable(List<RDBTable> sources) {
-		this.m_sources.addAll(sources);
-	}
-	
-	public MVTable(RDBTable base) {
-		this.m_sources.add(base);
+	public MVTable(String name, List<MVColumn> columns) {
+		m_name = name;
+		m_columns = new ArrayList<>(columns);
 	}
 
-	public MVTable(RDBTable base, List<RDBTable> related) {
-		this.m_sources.add(base);
-		this.m_sources.addAll(related);
+	public String getName() {
+		return m_name;
 	}
 
-	public List<RDBTable> getSourceTables() {
-		return m_sources;
+	public List<MVColumn> getColumns() {
+		return Collections.unmodifiableList(m_columns);
 	}
-	
-	@Override
-	public String toString() {
-		return m_sources.toString();
+
+	public void setColumns(List<MVColumn> columns) {
+		m_columns = new ArrayList<>(columns);
+	}
+
+	public void setName(String name) {
+		m_name = name;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((m_sources == null) ? 0 : m_sources.hashCode());
+		result = prime * result + ((m_columns == null) ? 0 : m_columns.hashCode());
+		result = prime * result + ((m_name == null) ? 0 : m_name.hashCode());
 		return result;
 	}
 
@@ -47,11 +47,21 @@ public class MVTable {
 		if (getClass() != obj.getClass())
 			return false;
 		MVTable other = (MVTable) obj;
-		if (m_sources == null) {
-			if (other.m_sources != null)
+		if (m_columns == null) {
+			if (other.m_columns != null)
 				return false;
-		} else if (!m_sources.equals(other.m_sources))
+		} else if (!m_columns.equals(other.m_columns))
+			return false;
+		if (m_name == null) {
+			if (other.m_name != null)
+				return false;
+		} else if (!m_name.equals(other.m_name))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return getName();
 	}
 }
