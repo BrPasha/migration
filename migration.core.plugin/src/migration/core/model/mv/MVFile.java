@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MVTable {
+public class MVFile {
 	private String m_name;
 	private List<MVColumn> m_columns = new ArrayList<>();
 
-	public MVTable(String name, List<MVColumn> columns) {
+	public MVFile(String name, List<MVColumn> columns) {
 		m_name = name;
 		m_columns = new ArrayList<>(columns);
 	}
@@ -46,7 +46,7 @@ public class MVTable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		MVTable other = (MVTable) obj;
+		MVFile other = (MVFile) obj;
 		if (m_columns == null) {
 			if (other.m_columns != null)
 				return false;

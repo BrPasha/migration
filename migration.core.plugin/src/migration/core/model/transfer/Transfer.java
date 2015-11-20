@@ -19,7 +19,7 @@ import com.google.common.collect.Collections2;
 
 import migration.core.model.mv.MVColumn;
 import migration.core.model.mv.MVColumnDepth;
-import migration.core.model.mv.MVTable;
+import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
@@ -190,7 +190,7 @@ public class Transfer {
 		return true;
 	}
 	
-	public MVTable constructMVTable() {
+	public MVFile constructMVTable() {
 		List<MVColumn> columns = new ArrayList<>();
 		columns.addAll(m_baseTable.getColumns().stream().map(rcol -> new MVColumn(
 				rcol.getTable() + "." + rcol.getName(), 
@@ -209,6 +209,6 @@ public class Transfer {
 				"", 
 				"", 
 				"")).collect(Collectors.toList()));
-		return new MVTable(m_baseTable.getName(), columns);
+		return new MVFile(m_baseTable.getName(), columns);
 	}
 }

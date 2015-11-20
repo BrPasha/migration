@@ -6,7 +6,7 @@ import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import migration.core.model.mv.MVTable;
+import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
@@ -48,7 +48,7 @@ public class MySqlDatabaseClientTest {
 			System.out.println(s.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum());
 			System.out.println();
 			s.stream().forEach(tr -> {
-				MVTable mvt = tr.constructMVTable();
+				MVFile mvt = tr.constructMVTable();
 				System.out.println(mvt.toString() + ": " + mvt.getColumns());
 			});
 		});

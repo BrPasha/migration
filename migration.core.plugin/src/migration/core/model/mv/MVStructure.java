@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Set;
 
 public class MVStructure {
-	private Set<MVTable> m_tables;
+	private Set<MVFile> m_tables;
 
-	public MVStructure(List<MVTable> tables) {
+	public MVStructure(List<MVFile> tables) {
 		m_tables = new HashSet<>(tables);
 	}
 
-	public Set<MVTable> getTables() {
+	public Set<MVFile> getTables() {
 		return m_tables;
 	}
 	
