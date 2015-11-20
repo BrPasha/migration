@@ -5,16 +5,21 @@ import static migration.core.util.Misc.permutationsFloatingSize;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
 
+import migration.core.model.mv.MVColumn;
+import migration.core.model.mv.MVColumnDepth;
+import migration.core.model.mv.MVTable;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
@@ -83,7 +88,19 @@ public class Transfer {
 				transformations.addAll(transfers);
 			}
 		}
-		return transformations;
+		Set<Set<Transfer>> structures = new HashSet<>(transformations);
+		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>(new Comparator<Set<Transfer>>() {
+			@Override
+			public int compare(Set<Transfer> o1, Set<Transfer> o2) {
+				return getWeight(o1, structure) - getWeight(o2, structure) > 0 ? -1 : 1;
+			}
+		});
+		orderedStructures.addAll(structures);
+		return new ArrayList<>(orderedStructures);
+	}
+	
+	private static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
+		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 	
 	private static List<Set<Transfer>> process(RDBStructure structure, RDBTable table, LinkedList<RDBTable> tables) {
@@ -171,5 +188,27 @@ public class Transfer {
 		} else if (!m_embeddedTables.equals(other.m_embeddedTables))
 			return false;
 		return true;
+	}
+	
+	public MVTable constructMVTable() {
+		List<MVColumn> columns = new ArrayList<>();
+		columns.addAll(m_baseTable.getColumns().stream().map(rcol -> new MVColumn(
+				rcol.getTable() + "." + rcol.getName(), 
+				rcol.getName(), 
+				MVColumnDepth.singlevalue.toString(), 
+				"", 
+				"", 
+				"", 
+				"")).collect(Collectors.toList()));
+		columns.addAll(m_embeddedTables.stream().flatMap(t -> t.getColumns().stream())
+			.map(rcol -> new MVColumn(
+				rcol.getTable() + "." + rcol.getName(), 
+				rcol.getName(), 
+				MVColumnDepth.singlevalue.toString(), 
+				"", 
+				"", 
+				"", 
+				"")).collect(Collectors.toList()));
+		return new MVTable(m_baseTable.getName(), columns);
 	}
 }

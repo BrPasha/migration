@@ -1,14 +1,12 @@
 package migration.core.db.relational.impl.mysql;
 
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import migration.core.model.mv.MVTable;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
@@ -42,24 +40,17 @@ public class MySqlDatabaseClientTest {
 		List<RDBRelation> relations = client.getRelations();
 		RDBStructure structure = new RDBStructure(tables, relations);
 		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
-		Set<Set<Transfer>> structures = new HashSet<>(transformations);
-		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>(new Comparator<Set<Transfer>>() {
-			@Override
-			public int compare(Set<Transfer> o1, Set<Transfer> o2) {
-				return getWeight(o1, structure) - getWeight(o2, structure) > 0 ? 1 : -1;
-			}
-		});
-		orderedStructures.addAll(structures);
-		System.out.println(orderedStructures.size());
+		System.out.println(transformations.size());
 		
-		orderedStructures.stream().forEach(s -> {
-			System.out.println();
+		transformations.stream().forEach(s -> {
+			System.out.println("------------------------------------------------------------------------");
 			s.stream().forEach(transfer -> System.out.println(transfer.getBaseTable() + ": " + transfer.getEmbeddedTables()));
 			System.out.println(s.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum());
+			System.out.println();
+			s.stream().forEach(tr -> {
+				MVTable mvt = tr.constructMVTable();
+				System.out.println(mvt.toString() + ": " + mvt.getColumns());
+			});
 		});
-	}
-	
-	private double getWeight(Set<Transfer> transfers, RDBStructure structure) {
-		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 }

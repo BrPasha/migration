@@ -77,4 +77,9 @@ public class MVColumn {
 	public void setType(String type) {
 		m_type = type;
 	}
+
+	@Override
+	public String toString() {
+		return getName();
+	}
 }
