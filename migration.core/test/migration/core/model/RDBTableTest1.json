@@ -1,9 +1,0 @@
-{
-	"name": "table1",
-	"columns": 
-	[
-		{"name" : "id"},
-		{"name" : "f1"},
-		{"name" : "f2"}
-	]
-}
