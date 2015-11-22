@@ -1,0 +1,4053 @@
+
+*******************************************************************************
+*
+*       Server subroutine for XMAP TOOL
+*
+*       Module%M%Version%I% Date%H%
+*
+*	IBM Confidential
+*	OCO Source Materials
+*	Copyright (C) IBM Corp.  2004, 2008
+*
+*
+*******************************************************************************
+*
+* DESCRIPTION:
+*
+*	This subroutine contains all the server codes for XMAPTOOL
+*
+*	Input arguments:  Action  - key for action to be taken
+*			  Params  - parameters required by the
+*				    particular function being
+*				    performed, field mark separated
+*
+*	Output arguments: OutData - any output from the requested
+*				    function, field mark separated
+*			  Error   - error code or 0 if no error
+*
+*****************************************************************************
+*
+*       Maintenence log - insert most recent change descriptions at top
+*
+*   07/15/12 rpruett    UDBT-938: Need MDM to have metadata selection wizard for UniVerse
+*	06/08/12 Double Xia UDBT-569: fix locating source code for cataloged program
+*	04/12/12 Double Xia UDBT-950: fix ListUsers problem on Windows.
+*	12/13/11 Double Xia UDBT-638: fix creatine file problem.
+*	10/10/11 Double Xia UCC-1228: fix creating file problem.
+*	02/09/11 Double Xia UNV-4974: logging doesn't write to right file.
+*	12/01/10 Double Xia UNV-4787: add new op code SetRCPToolName (66).
+*	10/18/10 Double Xia UNV-4771: use FILEINFO to replace STATUS to improve performance on Windows.
+*	10/11/10 Double Xia UNV-4525: improve tools' file loading performance, added GetFileList.
+*	10/04/10 Double Xia UNV-4579: OSBrowse /create folder work with path w/ whitespace.
+*	09/16/10 Double Xia UCC-772: defer creating &XML& until it's needed.
+*	04/12/10 Double Xia E40659: support multiple level file for UV.
+*	01/29/10 rpruett E41132: Add SetNoConvert and GetHome for client deploy of server components
+*	01/21/10 Double Xia E41096 Added OSCreateFolder.
+*	05/12/09 Double Xia E38978: support Q pointer files.
+*	04/02/09 Double E11471: support file creation of type 1, 19 and 25.
+*	01/13/09 Double E38702: add UV.ACCOUNT if it doesn't exist in the login account.
+*	05/23/08 Double E35614 create DIR file &XML& correctly.
+*	04/22/08 Double Xia E35146: Basic IDE project.
+*	02/08/06 34461 ZJH Make Logging as common variable.
+*   01/23/06 LFD 34492 Add code to save X_OUTDATA in the ShCmd subroutine and
+*                      then restore it after intermediate commands have been
+*                      logged.
+*   01/23/06 LFD 34343 Add a test for UV version so that the old XML/DB tool  
+*                      and the new tool will see database files correctly. The
+*                      newer tool, the one available from UDT 7.1/UV 10.2
+*                      going forward, can see file paths where the old tool
+*                      cannot.
+*   01/03/06 LFD 34308 Fix LogtoAccount subroutine so that when UV is 
+*                      upgraded and a user tries to run XML/DB or U2WSD
+*                      the tools can LOGTO UV, HS.SALES, HS.SERVICE, &
+*                      HS.ADMIN. Upgrading removes the VOC reference to &XML&,
+*                      thus an error was reported. Now if the VOC record, the
+*                      VOC record is missing, and/or if either the &XML& 
+*                      direcotry or D_&XML& file are missing, they are all 
+*                      created properly, thus allowing either tool to LOGTO
+*                      the selected account. This will work for any account,
+*                      but was noted for the system accounts after an upgrade.
+*   12/28/05 LFD 34298 For 10.2, add proper copy file, create account,
+*                      and delete account support
+*   12/22/05 LFD 34295 Change the logging facility to be enabled by adding
+*                      XTOOLDBG record to the UV VOC file
+*   12/22/05 LFD 34294 Fix to allow file paths to be displayed in the tools
+*   12/12/05 LFD 34257 Add improved support PICK style flavors
+*   12/08/05 JFM		UV dictionary fields may contain @VM, change them
+*                       to CHAR(32) first
+*	11/17/05 ZJH 	    Add new features 
+*	03/22/05 ZJH E33492 NT command is like "DOS /c dir" not "DOS /c !dir"
+*	09/02/04 ZJH E32682 remove debug statement, skip the PICK account
+*			    don't add '"' around the shell command.
+*
+*******************************************************************************
+
+SUBROUTINE XTOOLSUB(X_CODE, X_PARAMS, X_OUTDATA, X_ERROR)
+
+$INCLUDE UNIVERSE.INCLUDE XML.H
+$INCLUDE UNIVERSE.INCLUDE XMLTOOL.H
+
+
+COMMON /AAA/ Logging, LogFile, VFLAG, ErrorAndClearXOUTDATA, LogFilePath
+
+* Turn off LOGIN when LOGTO another account
+ASSIGN 1 TO SYSTEM(9006)
+
+X_OUTDATA = ""
+X_ERROR = 0
+ErrorAndClearXOUTDATA = ''
+
+X_CODE = X_CODE + 1
+
+CALL *XTOOLSUB_XPRE(X_CODE, X_PARAMS, X_OUTDATA, X_ERROR)
+
+IF X_ERROR <> 0 THEN
+	RETURN
+END
+
+* For UV 10.3, EDA is not supported
+** EDA Map Tool Subroutines
+EDA_START = 101
+EDA_ENDCODE = 200
+IF X_CODE >= EDA_START AND X_CODE < EDA_ENDCODE THEN
+    CALL *EDAMAPSUB(X_CODE - EDA_START, X_PARAMS, X_OUTDATA, X_ERROR)
+    RETURN
+END
+
+* start rpruett UDBT-938 Need MDM to have metadata selection wizard for UniVerse
+MDM_START=201
+MDM_ENDCODE=300
+
+IF X_CODE >= MDM_START AND X_CODE < MDM_ENDCODE THEN
+    CALL *MDMTOOLSUB(X_CODE - MDM_START, X_PARAMS, X_OUTDATA, X_ERROR)
+    RETURN
+END
+* end rpruett UDBT-938 Need MDM to have metadata selection wizard for UniVerse
+
+HUSH ON
+*DEBUG
+
+dummy = ''
+
+
+ON X_CODE GOSUB INITIALISE,
+    GetAccounts,		;* Get all accounts in this server
+    LogtoAccount,		;* Logto one account
+    GetFiles,			;* Get all data table under this acct
+    GetDict,			;* Get dict for on file
+    OSBrowse,			;* OS path switch
+    ToXMAP1,
+    ToXMAP2,
+    ReadXMAP,			;* Read XMAP file from &XML& 
+    WriteXMAP,			;* Write XMAP file to &XML&
+    GetDTDs,			;* No 10, get DTD list
+    ReadDTD,
+    GetXMAPs,			;* Get XMAP files under &XML&
+    CheckXMAP,			;* check if XMAP file under &XML&
+
+    ReadRecs,			;* Read Recs from one file
+    ClearTable,			;* Cleart Recs in one table
+    DB2XML,			;* Covnert data in table to XML doc
+    XML2DB,			;* Convert xmldoc to Tables
+
+    GetXSDs,			;* Get a list of XSD files under &XML&
+    ReadXSD,			;* READ XSD file
+    
+    FileLock,			;* lock a file under &XML&
+    ReleaseFileLock,		;* Relase the lock
+
+    GetDrivers,			;* No 22, Get Drivers
+
+    ReadOSFile,			;* Read a OS file
+    WriteOSFile,		;* Write a OS file, return error when exist
+    WriteOSFileForce,		;* Overwrite a OS file 
+    CopyOSFile,			;* Copy file, return error if existed
+    CopyOSFileForce,		;* copy file, overwrite if existed
+
+    GetPlatform,		;* Get Platoform type
+
+    RemoveFiles,		;* No. 30 Remove some files
+    NewAcct,			;* Setup/create a new account
+    DeleteAcct,			;* Remove a UDT account (with ? content)
+
+    CreateFile,			;* Create a UV file
+    ReadDICT,			;* Read DICT info
+    WriteDICT,			;* Write DICT info, do CD after
+
+    ReadFile,			;* Read data record from a UDT File
+    UpdateFile,			;* Update data record in a UDT File
+    DeleteRec,			;* Delete data record from a UDT File
+    AddRec,			;* Add data record to a UDT file
+
+    GenDICT,			;* No. 40 create DICT from XSD/DTD
+    GenXSD,			;* Generate the XSD/DTD from a DICT
+    CopyFile,			;* Copy a U2 file
+
+    GetXMLFiles,		;* Get files under &XML&
+    CheckID,			;* Check if ID is unique in the file
+
+    Iconv,			;* ICONV
+    Oconv,			;* OCONV
+
+    GetCTLGFiles,		;* Get catalog files under CTLG
+    GetParas,			;* Get parameters of the BASIC programs
+
+    GetBPFiles,			;* get files under BP
+    ReadBPFile,			;* read a BP file from BP
+    WriteBPFile,		;* write a BP file into BP
+
+    GetDIRRecordList,		;* get file list under a DIR
+    ReadDIRRecord,		;* read a Basic program file from a DIR
+    WriteDIRRecord,		;* write a Basic program file into a DIR
+    CompileDIRRecord,		;* compile a Basic program in a DIR
+    CatalogDIRRecord,		;* catalog a Basic program in a DIR
+    ListUsers,			;* list UniVerse users
+    GetMultiDIRRecordList,	;* list content of a LD file
+    PREINITIALISE,		;* execute initial commands, before doing anything else
+    GetAccountFlavor,		;* get the account flavor
+
+    GetToolVersion,		;* get the version number of this tool
+    OSCreateFolder,		;* create a new folder
+
+    SetNoConvert,		;* run the UniData BASIC NOCONVERT ON|OFF command
+    GetHome,			;* get the path of the u2 installation dir
+
+    GetFileList,		;* No. 64 Get all data table names under this acct
+    GetFileTypeInfo,		;* get file type information for one file
+    SetRCPToolName,		;* No. 66 set current RCP tool name, one of xmldb, eda, wsd, xadmin and bdt
+    LocateCTLGSource,		;* locate the source program for catalog
+    Unused
+
+HUSH OFF
+
+GOSUB LOG
+
+CALL *XTOOLSUB_XPST(X_CODE, X_PARAMS, X_OUTDATA, X_ERROR)
+
+RETURN
+
+
+***********************************************************************
+*
+* PRE_INITIALISE is called only when there're some initial commands to execute
+*
+***********************************************************************
+PREINITIALISE:
+    * 34295 Open the UV VOC file and look for the presence of XTOOLDBG to enable
+    * logging
+    Logging = @FALSE
+    OPEN 'VOC' to FUVVOC THEN
+	READ LogFilePath FROM FUVVOC, 'XTOOLDBG' THEN
+	   Logging = @TRUE
+	END
+	CLOSE FUVVOC
+	GOSUB InitLOG
+    END
+
+
+    INICMDS = TRIM(X_PARAMS<1>)
+
+    IF INICMDS <> "" THEN
+	GOSUB ExecInitialCommands
+    END
+
+RETURN
+
+
+ExecInitialCommands:
+
+NO_CMDS = DCOUNT(INICMDS, CHAR(10))
+
+FOR CMDIDX = 1 TO NO_CMDS 
+	ONECMD = FIELD(INICMDS, CHAR(10), CMDIDX)
+	ONECMD = TRIM(ONECMD)
+	IF ONECMD <> "" THEN
+		X_OUTDATA = X_OUTDATA:CHAR(10):ONECMD
+
+		CMD_PREF = FIELD(ONECMD, ' ', 1)
+		CMD_REST=FIELD(ONECMD, ' ', 2, 999)
+		HUSH OFF SETTING pre_status
+		IF CMD_PREF = "PERFORM" THEN
+			PERFORM CMD_REST ; *CAPTURING outX
+		END ELSE IF CMD_PREF = "EXECUTE" THEN
+			EXECUTE CMD_REST CAPTURING outX
+		END ELSE 
+			EXECUTE ONECMD CAPTURING outX
+		END
+		HUSH pre_status
+
+		X_OUTDATA = X_OUTDATA:CHAR(10): CHANGE(outX, @FM, CHAR(10)):CHAR(10)
+	END
+	
+NEXT CMDIDX
+
+RETURN
+
+***********************************************************************
+*
+* Set environment before deal the real functions
+*
+***********************************************************************
+INITIALISE:
+    ToolName = X_PARAMS<1>
+
+    sys = SYSTEM(91)
+    IF sys = 1 THEN
+	* Windows NT system
+	OS.TYPE = "NT"
+    	OS.SEP = "\"
+	UDHOME = SYSTEM(32)
+	X_OUTDATA = UDHOME:@FM:"DOS /c"
+    END ELSE
+	* UNIX system
+	OS.TYPE = "UNIX"
+    	OS.SEP = "/"
+	UDHOME = SYSTEM(32)
+	X_OUTDATA = UDHOME:@FM:"SH -c"
+    END
+    OPEN "","UV.ACCOUNT" TO UDACCOUNT THEN NULL ELSE
+        OPEN "","VOC" TO tmpvoc THEN 
+	    ACCTRec = "F":@FM:UDHOME:OS.SEP:"UV.ACCOUNT"
+            ACCTRec := @FM:UDHOME:OS.SEP:"D_UV.ACCOUNT"
+            WRITE ACCTRec ON tmpvoc, 'UV.ACCOUNT' ON ERROR
+	    END THEN
+		OPEN "","UV.ACCOUNT" TO UDACCOUNT THEN NULL
+	    END
+	END
+    END
+
+    ver = "10.1.10"
+    OPENSEQ UDHOME:OS.SEP:"INCLUDE":OS.SEP:"UVPATCH.INC" TO OSFILE ON ERROR
+    END LOCKED
+    END THEN 
+	    READSEQ ver FROM OSFILE ELSE
+		ver = "10.1.10"
+	    END
+	    CLOSESEQ OSFILE
+    END ELSE
+    END
+    * E34343 Test if the version is greater than or equal to 10.2. Set a flag
+    * if it is because the 10.2 and later XML/DB tool takes the full VOC record
+    * and the original one from 10.1 does not. Since we cannot test the client
+    * version, we have assume that the older version will not be run against
+    * UV 10.1.x
+    VERSION.CODE = FIELD(ver,'.',1)
+    RELEASE.CODE = FIELD(ver,'.',2)
+    IF VERSION.CODE => 11 OR (VERSION.CODE => 10 AND RELEASE.CODE => 2) THEN
+       VFLAG = 1
+    END ELSE
+       VFLAG = 0
+    END
+    * E34343 End
+    X_OUTDATA = X_OUTDATA:@FM:ver
+
+    BP_DATA=""
+    OPENSEQ UDHOME:OS.SEP:"INCLUDE":OS.SEP:"XTOOLSUB.DATA" TO OSDATAFILE ON ERROR
+    END LOCKED
+    END THEN
+	DONE=FALSE
+	LOOP
+		READSEQ ONE_LINEDATA FROM OSDATAFILE ELSE DONE=TRUE
+	UNTIL DONE DO
+		BP_DATA = BP_DATA:CHAR(10):ONE_LINEDATA
+	REPEAT
+    END
+    IF BP_DATA <> "" THEN
+	X_OUTDATA = X_OUTDATA:@FM:BP_DATA
+    END
+	
+    * 34295 Open the UV VOC file and look for the presence of XTOOLDBG to enable
+    * logging
+    Logging = @FALSE
+    OPEN 'VOC' to FUVVOC THEN
+	READ LogFilePath FROM FUVVOC, 'XTOOLDBG' THEN
+	   Logging = @TRUE
+	END
+	CLOSE FUVVOC
+	GOSUB InitLOG
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Get ALL ACCOUNTS on this server
+*     input: none
+*
+***********************************************************************
+GetAccounts:
+    SELECT UDACCOUNT
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	READ Rec FROM UDACCOUNT, ID ELSE 
+	    X_ERROR = ETOOL.WRONGACCTID
+	    X_OUTDATA = "Invalid account name ":ACCT_ID
+	    RETURN
+	END
+
+	X_OUTDATA<-1> = ID:@VM:Rec<11>
+    REPEAT
+RETURN
+
+
+
+***********************************************************************
+*
+* Get ALL ACCOUNTS on this server
+*     input: none
+*
+***********************************************************************
+GetPlatform:
+    X_OUTDATA = OS.TYPE
+RETURN
+
+***********************************************************************
+*
+* Goto ONE special ACCOUNT
+*     input: account path
+*
+***********************************************************************
+LogtoAccount:
+    ACCT_ID = TRIM(X_PARAMS)
+    READ Rec FROM UDACCOUNT, ACCT_ID ELSE 
+	X_ERROR = ETOOL.WRONGACCTID
+	X_OUTDATA = "Invalid account name ":ACCT_ID
+	RETURN
+    END
+
+    ACCT_NAME = Rec<11>
+    ACCTPATH = ACCT_NAME
+    * E34308 Before we create the file, see if the directory and DICT exist
+    * as this can happen during an upgrade for the system accounts
+    dummy = ''; X_OUT = ''
+    
+    ExLine = "LOGTO ":ACCT_NAME
+   
+    GOSUB ExecWithCapture
+
+    IF X_OUT <> "" THEN
+	X_ERROR = ETOOL.WRONGPATH
+	X_OUTDATA = "Invalid account path:":ACCT_NAME:" for account ":ACCT_ID
+	RETURN
+    END
+    
+
+    X_OUTDATA = 'LOGTO ':ACCT_ID:' was successful'
+    ErrorAndClearXOUTDATA = 1
+    GOSUB LOG
+RETURN
+
+
+***********************************************************************
+*
+* Open &XML& file in current account
+*     if &XML& doesn't exist, try to create it.
+*     FXMLDIR is the file handle.
+*
+***********************************************************************
+OpenXMLDir:
+    * Check the Account TYPE
+    ACCTYPE = 0
+    OPEN "","VOC" TO tmpvoc ELSE ACCTYPE = 1
+    READ tmprec FROM tmpvoc, "RELLEVEL" ELSE ACCTYPE = 1
+    * 34257 Add INFORMATION, IDEAL, and PIOPEN flavors to exlcude
+    IF tmprec<3> <> "NEWACC" AND tmprec<3> <> "ADMIN" AND tmprec<3> <> "PIOPEN" AND tmprec<3> <> "INFORMATION" AND tmprec<3> <> "IDEAL" THEN ACCTYPE = 1
+    
+    XMLFileMissing = @FALSE
+    XMLDictMissing = @FALSE
+    HUSH OFF  SETTING pre_status
+    * E35614: create &XML file correctly
+    OPEN "&XML&" TO FXMLDIR THEN
+       * even though file can be opened, the dict might be missing
+       OPENPATH '.':OS.SEP:'D_&XML&' TO tmpFile THEN
+             CLOSE tmpFile
+       END ELSE
+             XMLDictMissing = @TRUE
+       END
+    END ELSE
+       OPENPATH '.':OS.SEP:'&XML&' TO tmpFile THEN
+          * &XML& directory exists even though there is no VOC reference
+          CLOSE tmpFile
+       END ELSE
+          XMLFileMissing = @TRUE
+       END
+
+       OPENPATH '.':OS.SEP:'D_&XML&' TO tmpFile THEN
+             CLOSE tmpFile
+       END ELSE
+             XMLDictMissing = @TRUE
+       END
+
+       IF NOT(XMLFileMissing) AND NOT(XMLDictMissing) THEN
+             * Because we have both the &XML& directory and its associated
+             * dictionary file, we can create the VOC pointer
+             WRITE 'F':@FM:'&XML&':@FM:'D_&XML&' ON tmpvoc, '&XML&' ON ERROR
+		X_ERROR = ETOOL.XMLDIROPENFAIL
+		X_OUTDATA = "Failed to create &XML& under ":@PATH
+		RETURN
+	     END
+       END
+    END
+    IF XMLDictMissing AND XMLFileMissing THEN
+          DELETE tmpvoc, '&XML&' ON ERROR
+		X_ERROR = ETOOL.XMLDIROPENFAIL
+		X_OUTDATA = "Failed to create &XML& under ":@PATH
+		RETURN
+	  END
+       * Create the &XML& file
+       IF ACCTYPE = 1 THEN
+          * PICK style account
+          EXECUTE "CREATE.FILE &XML& 3,1,18 1,1,19" CAPTURING out RETURNING dummy
+       END ELSE
+          * Ideal account
+          EXECUTE "CREATE.FILE &XML& 19" CAPTURING out RETURNING dummy
+       END
+    END ELSE
+       IF XMLFileMissing AND NOT(XMLDictMissing) THEN
+          DELETE tmpvoc, '&XML&' ON ERROR 
+		X_ERROR = ETOOL.XMLDIROPENFAIL
+		X_OUTDATA = "Failed to create &XML& under ":@PATH
+		RETURN
+	  END
+          * Create DATA FILE &XML&
+          IF ACCTYPE = 1 THEN
+             * PICK style account
+             EXECUTE "CREATE.FILE DATA &XML& 1,1,19" CAPTURING out RETURNING dummy
+          END ELSE
+             * Ideal account
+             EXECUTE "CREATE.FILE DATA &XML& 19" CAPTURING out RETURNING dummy
+          END
+          WRITEV 'D_&XML&' ON tmpvoc, '&XML&', 3
+       END
+       IF XMLDictMissing AND NOT(XMLFileMissing) THEN
+          DELETE tmpvoc, '&XML&' ON ERROR
+		X_ERROR = ETOOL.XMLDIROPENFAIL
+		X_OUTDATA = "Failed to create &XML& under ":@PATH
+		RETURN
+	  END
+          * Create DICT FILE &XML&
+          IF ACCTYPE = 1 THEN
+             * PICK style account
+             EXECUTE "CREATE.FILE DICT &XML& 3,1,18" CAPTURING out RETURNING dummy
+          END ELSE
+             * Ideal account
+             EXECUTE "CREATE.FILE DICT &XML& 18 3 1" CAPTURING out RETURNING dummy
+          END
+          WRITEV '&XML&' ON tmpvoc, '&XML&', 2 ON ERROR 
+		X_ERROR = ETOOL.XMLDIROPENFAIL
+		X_OUTDATA = "Failed to create &XML& under ":@PATH
+		RETURN
+	  END
+       END
+    END
+
+    CLOSE tmpvoc
+    HUSH  pre_status
+
+    IF out THEN
+       X_OUTDATA = out
+       GOSUB LOG
+    END
+
+    OPEN "&XML&" TO FXMLDIR ON ERROR
+       X_ERROR = ETOOL.XMLDIROPENFAIL
+       X_OUTDATA = "Failed to open &XML& under ":@PATH
+       RETURN
+    END ELSE
+       X_ERROR = ETOOL.XMLDIROPENFAIL
+       X_OUTDATA = "Failed to open &XML& under ":@PATH
+       RETURN
+    END
+
+    X_OUTDATA=""
+
+RETURN
+
+***********************************************************************
+*
+* Get ALL FILES under one ACCOUNT on this server,
+* trying to get file type as well.
+*     no input, 
+*
+***********************************************************************
+GetFiles:
+
+* 34257 In UniVerse some flavors do not support this syntax, so we will use
+* a syntax supported by all flavors 
+*    ExLine  = "SSELECT VOC WITH F1 LIKE 'F...' OR F1 LIKE 'f...'"
+*    ExLine := " OR F1 LIKE 'DIR...' OR F1 LIKE 'dir...'"
+*    ExLine := " OR F1 LIKE 'LF...' OR F1 LIKE 'lf...'"
+*    ExLine := " OR F1 LIKE 'LD...' OR F1 LIKE 'ld...'"
+*    ExLine  = "SSELECT VOC WITH F1 LIKE F... OR WITH F1 LIKE f... OR WITH F1 LIKE Q... OR WITH F1 LIKE q..."
+    ExLine = "SSELECT VOC WITH F2 UNLIKE ...!... AND F3 UNLIKE ...!... AND (F1 LIKE F... OR F1 LIKE f... OR F1 LIKE Q... OR F1 LIKE q...)"
+
+    GOSUB ExecECL
+
+    * 34294 Need to open the VOC file so we can read the VOC records of the
+    * files we found in the above select. We will be returing them to XML/DB
+    * and U2WSD tools
+    OPEN "","VOC" TO FVOC ELSE
+	X_OUTDATA = "Open VOC failed"
+	X_ERROR = ETOOL.OPENFAIL
+       EXECUTE "CLEARSELECT"
+	RETURN
+    END
+
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+*	IF ID = "&DEVICE&"            THEN GOTO SKIP 
+*	IF ID = "&PARTFILES&"         THEN GOTO SKIP 
+*	IF ID = "&SAVEDLISTS&"        THEN GOTO SKIP 
+*	IF ID = "&UFD&"               THEN GOTO SKIP 
+*	IF ID = "APP.PROGS"           THEN GOTO SKIP 
+*	IF ID = "BASIC.HELP"          THEN GOTO SKIP 
+*	IF ID = "BLTRS"               THEN GOTO SKIP 
+*	IF ID = "DICT.DICT"           THEN GOTO SKIP 
+*	IF ID = "DICT.PICK"           THEN GOTO SKIP 
+*	IF ID = "GLOBAL.CATDIR"       THEN GOTO SKIP 
+*	IF ID = "NEWACC"              THEN GOTO SKIP 
+*	IF ID = "PTERM.FILE"          THEN GOTO SKIP 
+*	IF ID = "REVISE.DISCUSSIONS"  THEN GOTO SKIP 
+*	IF ID = "REVISE.PROCESSES"    THEN GOTO SKIP 
+*	IF ID = "SQL.HELP"            THEN GOTO SKIP 
+*	IF ID = "SYS.HELP"            THEN GOTO SKIP 
+*	IF ID = "SYS.MESSAGE"         THEN GOTO SKIP 
+*	IF ID = "SYS.TERMINALS"       THEN GOTO SKIP 
+*	IF ID = "UNIVERSE.INCLUDE"    THEN GOTO SKIP 
+*	IF ID = "UNIVERSE.MENU.FILE"  THEN GOTO SKIP 
+*	IF ID = "UNIVERSE.STAT.FILE"  THEN GOTO SKIP 
+*	IF ID = "UNIVERSE.VOCLIB"     THEN GOTO SKIP 
+*	IF ID = "UV.SAVEDLISTS"       THEN GOTO SKIP 
+*	IF ID = "UV_ASSOC"            THEN GOTO SKIP 
+*	IF ID = "UV_COLUMNS"          THEN GOTO SKIP 
+*	IF ID = "UV_SCHEMA"           THEN GOTO SKIP 
+*	IF ID = "UV_TABLES"           THEN GOTO SKIP 
+*	IF ID = "UV_USERS"            THEN GOTO SKIP 
+*	IF ID = "UV_VIEWS"            THEN GOTO SKIP 
+*	IF ID = "VOCLIB"              THEN GOTO SKIP 
+*	IF ID = "VOC"                 THEN GOTO SKIP 
+*	IF ID = "&XML&"               THEN GOTO SKIP 
+*	IF ID = "&MAP&"               THEN GOTO SKIP 
+*	IF ID = "BCI.HELP"            THEN GOTO SKIP 
+*	IF ID = "AE_DOC"              THEN GOTO SKIP 
+*	IF ID = "ERRMSG"              THEN GOTO SKIP 
+*	IF ID = "BP"                  THEN GOTO SKIP 
+	IF ID = "BP.O"                THEN GOTO SKIP 
+	IF ID = "XToolPtr"            THEN GOTO SKIP 
+       * 34257 Add some files to omit
+       IF ID[1,1] = '&'              THEN GOTO SKIP
+       IF ID[2] = '.O'               THEN GOTO SKIP
+       IF ID = 'BLOCK-CONVERT'       THEN GOTO SKIP
+        
+       * 34294 Add code to return the VOC records for each ID so that
+       * all files show file paths in XML/DB and U2WSD
+       READ Rec FROM FVOC, ID THEN
+          IF VFLAG THEN           ;* E34343
+	     * Need to check the file type
+	     * for DIR file, should change type from "F" to "DIR"
+	     OPEN ID TO tmpfile THEN
+		*STATUS stats FROM tmpfile THEN
+		*    IF stats<21> = 1 OR stats<21> = 19 THEN
+		*	Rec<1>="DIR"
+		*    END
+		*    X_OUTDATA<-1> = ID:@VM:CHANGE(CHANGE(Rec,@VM,CHAR(32)), @FM, @VM)
+		*END
+		IF FILEINFO(tmpfile, 3) = 4 THEN Rec<1>="DIR"
+		X_OUTDATA<-1> = ID:@VM:CHANGE(CHANGE(Rec,@VM,CHAR(32)), @FM, @VM)
+    	     END ELSE 
+		IF Rec<4>="M" THEN
+		    Rec<1>="LD"
+		    X_OUTDATA<-1> = ID:@VM:CHANGE(CHANGE(Rec,@VM,CHAR(32)), @FM, @VM)
+		END
+	     END 
+          END ELSE                ;* E34343
+             X_OUTDATA<-1> = ID   ;* E34343
+          END
+       END ELSE
+          X_OUTDATA<-1> = ID
+       END
+       
+SKIP:
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Get ALL FILES under one ACCOUNT on this server
+* not trying to get file type.
+*     no input, 
+*
+***********************************************************************
+GetFileList:
+    *ExLine = "SSELECT VOC WITH F2 UNLIKE ...!... AND F3 UNLIKE ...!... AND (F1 LIKE F... OR F1 LIKE f... OR F1 LIKE Q... OR F1 LIKE q...)"
+    ExLine = "SSELECT VOC WITH (F1 LIKE F... OR F1 LIKE f... OR F1 LIKE Q... OR F1 LIKE q...)"
+
+    GOSUB ExecECL
+
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+       IF ID = "XToolPtr"            THEN CONTINUE
+       IF ID[1,1] = '&'              THEN CONTINUE
+       IF ID[2] = '.O'               THEN CONTINUE 
+
+	X_OUTDATA<-1> = ID
+
+SKIP2:
+    REPEAT
+
+RETURN
+
+***********************************************************************
+*
+* Get the file type information for the input file name
+* not trying to get file type.
+*     no input, 
+*
+***********************************************************************
+GetFileTypeInfo:
+    ID = X_PARAMS<1>
+    OPEN "","VOC" TO FVOC ELSE
+        X_OUTDATA = "Open VOC failed"
+        X_ERROR = ETOOL.OPENFAIL
+        RETURN
+    END
+
+    READ Rec FROM FVOC, ID THEN
+             * Need to check the file type
+             * for DIR file, should change type from "F" to "DIR"
+             OPEN ID TO tmpfile THEN
+                *STATUS stats FROM tmpfile THEN
+                *    IF stats<21> = 1 OR stats<21> = 19 THEN
+                *        Rec<1>="DIR"
+                *    END
+                *    X_OUTDATA = ID:@FM:Rec
+                *END
+                IF FILEINFO(tmpfile, 3) = 4 THEN Rec<1>="DIR"
+                X_OUTDATA = ID:@FM:Rec
+             END ELSE
+                IF Rec<4>="M" THEN
+                    Rec<1>="LD"
+                    X_OUTDATA = ID:@FM:Rec
+                END ELSE
+			X_OUTDATA = "Can not open ":ID:" in VOC"
+			X_ERROR = ETOOL.OPENFAIL
+		END
+             END
+    END ELSE
+          X_OUTDATA = ID
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Get the dictionary column information for a file
+*
+***********************************************************************
+GetDict:
+    FILE_NAME = TRIM(X_PARAMS) 
+
+    ExLine  = 'SSELECT DICT ':FILE_NAME:' WITH TYPE = "D"'
+    GOSUB ExecECL
+
+    OPEN "DICT", FILE_NAME TO F1 ELSE 
+	X_ERROR = ETOOL.OPENDICTFAIL
+	X_OUTDATA = "Failed to open DICT file for ":FILE_NAME
+	RETURN
+    END
+
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	READ Rec FROM F1, ID ELSE 
+	    X_ERROR = ETOOL.NODICTID
+	    X_OUTDATA = "Cannot read dict item: ":ID:" from DICT of ":FILE_NAME
+	    RETURN
+	END
+	X_OUTDATA<-1> = ID:@VM:CHANGE(CHANGE(Rec,@VM,CHAR(32)), @FM, @VM)
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get the mapinfo from the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+GetXMAPs:
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    SELECT FXMLDIR
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	LENs = LEN(ID)
+	IF LENs > 4 THEN
+          * 34257 Fix appendix to just grab the last 4 characters
+*	    appendix = UPCASE(ID[LENs-3, LENs])
+	    appendix = UPCASE(ID[4])
+	    IF appendix = ".MAP" THEN
+		X_OUTDATA<-1> = ID
+	    END
+	END
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get the mapinfo from the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+ReadXMAP:
+    XID = TRIM(X_PARAMS)
+
+    IS_FIRSTLINE=TRUE
+    OPENSEQ "&XML&", XID TO XID_FILEID ON ERROR
+        X_ERROR = ETOOL.NOXMAPREC
+        X_OUTDATA = "Failed to read file ":XID:" from &XML&"
+    END LOCKED
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+        X_OUTDATA = "Failed to apply lock on file ":XID:" from &XML&"
+    END THEN
+            LOOP
+                READSEQ ONE_LINEDATA FROM XID_FILEID ELSE DONE=TRUE
+            UNTIL DONE DO
+                IF IS_FIRSTLINE = TRUE THEN
+                    X_OUTDATA = ONE_LINEDATA
+                    IS_FIRSTLINE = FALSE
+                END ELSE
+                   X_OUTDATA = X_OUTDATA:CHAR(10):ONE_LINEDATA
+                END
+            REPEAT
+            CLOSESEQ XID_FILEID
+    END ELSE
+        X_ERROR = ETOOL.NOXMAPREC
+        X_OUTDATA = "Failed to read file ":XID:" from &XML&"
+    END
+
+*    READ Recs FROM FXMLDIR, XID ELSE
+*    	X_ERROR = ETOOL.NOXMAPREC
+*	X_OUTDATA = "Failed to read XMAP file ":XID:" form &XML& directory"
+*    	RETURN
+*    END
+*    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+RETURN
+
+***********************************************************************
+*
+* Subroutine to check if the name of intermediate file already there
+*     input: id, overwrite
+*
+***********************************************************************
+CheckXMAP:
+    XID = TRIM(X_PARAMS)
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    READ Recs FROM FXMLDIR, XID THEN
+	X_OUTDATA = 1
+    END ELSE
+    	X_OUTDATA = 0
+    END
+RETURN
+
+***********************************************************************
+*
+* Subroutine to write the mapinfo into the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+WriteXMAP:
+    XID = TRIM(X_PARAMS<1>)
+    map = FIELD(X_PARAMS, @FM, 2, COUNT(X_PARAMS, @FM)+1)
+
+    FORCE_FLAG=1
+    LOCATE ETOOL.SIG_ORIG_DATA IN map SETTING DAT_ORIG_NO THEN
+        DAT_ORIG = FIELD(map, @FM, DAT_ORIG_NO+1,  COUNT(map, @FM))
+        map = FIELD(map, @FM, 1, DAT_ORIG_NO-1)
+        LOCATE ETOOL.SIG_FORCE_FLAG IN DAT_ORIG SETTING FORCE_FLG_NO THEN
+	    FORCE_FLAG= FIELD(DAT_ORIG, @FM, FORCE_FLG_NO+1, COUNT(DAT_ORIG, @FM))
+	    DAT_ORIG=FIELD(DAT_ORIG, @FM, 1, FORCE_FLG_NO-1)
+        END ELSE
+            FORCE_FLAG=0
+        END
+    END ELSE
+        DAT_ORIG_NO = -1
+    END
+
+    OPENSEQ "&XML&", XID TO XID_FILEID ON ERROR
+        X_ERROR = ETOOL.NOXMAPREC
+        X_OUTDATA = "Failed to write file ":XID:" to &XML&"
+    END LOCKED
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+        X_OUTDATA = "Failed to apply lock on file ":XID:" from &XML&"
+    END THEN
+    END ELSE
+        CREATE XID_FILEID ELSE
+            X_ERROR = ETOOL.NOXMAPREC
+            X_OUTDATA = "Failed to write program file ":XID:" to &XML&"
+        END
+    END
+
+    IF X_ERROR <> 0 THEN RETURN
+
+    IF DAT_ORIG_NO > 0 AND FORCE_FLAG=0 THEN
+        * let's do optimistic locking
+        *
+        DATA_NOW=""
+        DONE=FALSE
+        IS_FIRSTLINE = TRUE
+        OPENSEQ "&XML&", XID TO TMP_XID_FILEID THEN
+            LOOP
+                READSEQ ONE_LINEDATA FROM TMP_XID_FILEID ELSE DONE=TRUE
+            UNTIL DONE DO
+                IF IS_FIRSTLINE = TRUE THEN
+                    DATA_NOW = ONE_LINEDATA
+                    IS_FIRSTLINE = FALSE
+                END ELSE
+                    DATA_NOW = DATA_NOW:CHAR(10):ONE_LINEDATA
+                END
+            REPEAT
+            CLOSESEQ TMP_XID_FILEID
+        END
+
+        IF DAT_ORIG <> DATA_NOW THEN
+            X_ERROR = ETOOL.OPT_DATACHANGED
+            X_OUTDATA = "The file ":XID:" from &XML& has been changed."
+            *X_OUTDATA = DATA_NOW
+            CLOSESEQ XID_FILEID
+            RETURN
+        END
+    END
+
+
+    WEOFSEQ  XID_FILEID ON ERROR
+        X_ERROR = ETOOL.XMAPWRITEFAIL
+        X_OUTDATA = "Failed to write file ":XID:" to &XML&"
+    END
+
+    WRITESEQF map TO XID_FILEID ON ERROR
+        X_ERROR = ETOOL.XMAPWRITEFAIL
+        X_OUTDATA = "Failed to write file ":XID:" to &XML&"
+    END ELSE
+        X_ERROR = ETOOL.XMAPWRITEFAIL
+        X_OUTDATA = "Failed to write file ":XID:" to &XML&"
+    END
+
+    CLOSESEQ XID_FILEID
+
+
+*    WRITE map TO FXMLDIR, XID ON ERROR
+*errcode = STATUS()
+*    	X_ERROR = ETOOL.XMAPWRITEFAIL
+*	X_OUTDATA = "Failed to write XMAP file ":XID:" to &XML& diretory. Error code = ":errcode
+*    	RETURN
+*    END
+    
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get all DTDs under &XML&, with "*.dtd" or 'xsd'
+*     input: id, overwrite
+*
+***********************************************************************
+GetDTDs:
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    SELECT FXMLDIR
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	LENs = LEN(ID)
+	IF LENs > 4 THEN
+      * 34257 Fix appendix to just grab the last 4 characters
+*	    appendix = UPCASE(ID[LENs-3, LENs])
+	    appendix = UPCASE(ID[4])
+	    IF appendix = ".DTD" THEN
+		X_OUTDATA<-1> = ID
+	    END
+	END
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to read a DTD file from &XML& directory 
+*     input: id, overwrite
+*
+***********************************************************************
+ReadDTD:
+    XID = TRIM(X_PARAMS)
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    READ Recs FROM FXMLDIR, XID ELSE
+    	X_ERROR = ETOOL.NODTDID
+	X_OUTDATA = "Failed to read DTD file ":XID:" from &XML& directory"
+    	RETURN
+    END
+    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get all DTDs under &XML&, with "*.dtd" or 'xsd'
+*     input: id, overwrite
+*
+***********************************************************************
+GetXSDs:
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    SELECT FXMLDIR
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	LENs = LEN(ID)
+	IF LENs > 4 THEN
+      * 34257 Fix appendix to just grab the last 4 characters
+*	    appendix = UPCASE(ID[LENs-3, LENs])
+	    appendix = UPCASE(ID[4])
+	    IF appendix = ".XSD" THEN
+		X_OUTDATA<-1> = ID
+	    END
+	END
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to read a XSD file from &XML& directory 
+*     input: id, overwrite
+*
+***********************************************************************
+ReadXSD:
+    XID = TRIM(X_PARAMS)
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    READ Recs FROM FXMLDIR, XID ELSE
+    	X_ERROR = ETOOL.NODTDID
+	X_OUTDATA = "Failed to read XSD file ":XID:" from &XML& directory"
+    	RETURN
+    END
+    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+RETURN
+
+***********************************************************************
+*
+* Subroutine set a lock for file under &XML&
+*     input: id, 
+*
+***********************************************************************
+FileLock:
+    XID = TRIM(X_PARAMS)
+
+    newID = ACCTPATH:"/":XID
+    IF RECORDLOCKED(UDACCOUNT, newID) <> 0 THEN
+	X_ERROR = ETOOL.FILELOCKED
+	X_OUTDATA = "File ":XID:" is opened by other user."
+	RETURN
+    END
+
+    RECORDLOCKL UDACCOUNT, newID ON ERROR
+	X_ERROR = ETOOL.FILELOCKED
+	X_OUTDATA = "Unable to lock file ":XID:"."
+    END
+RETURN
+
+***********************************************************************
+*
+* Subroutine release a lock for file under &XML&
+*     input: id, 
+*
+***********************************************************************
+ReleaseFileLock:
+
+    XID = TRIM(X_PARAMS)
+    newID = ACCTPATH:"/":XID
+    RELEASE UDACCOUNT, newID ON ERROR X_ERROR = 2
+
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to read RECs from one file
+*
+***********************************************************************
+ReadRecs:
+    XFileName = TRIM(X_PARAMS)
+    OPEN XFileName TO XFile ELSE 
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":XFileName
+	RETURN
+    END
+
+    SELECT XFile
+    DONE = FALSE
+    FLAG = 1
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	READ Rec FROM XFile, ID ELSE
+	    X_ERROR = ETOOL.READFAIL
+	    X_OUTDATA = "Failed to read data from file ":XFileName
+	    CLOSE XFile
+	    RETURN
+	END
+
+	IF FLAG THEN
+	    X_OUTDATA = Recs
+	    FLAG = 0
+	END ELSE
+	    X_OUTDATA := @AM:Recs
+	END
+    REPEAT
+
+    CLOSE XFile
+
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to remove the XMAP, EDAMAP, EDAXMAP, XSD, DTD files
+* input: id, overwrite
+*
+***********************************************************************
+RemoveFiles:
+
+    TYPE = TRIM(X_PARAMS<1>)
+    FileName = TRIM(X_PARAMS<2>)
+
+    BEGIN CASE
+       CASE TYPE = "XMAP" OR TYPE = "DTD" OR TYPE = "XSD" OR TYPE = "XML"
+	   PERFORM "DELETE &XML& '":FileName:"'"
+        
+       CASE TYPE = "EDAMAP"
+	   PERFORM "DELETE &EDAMAP& '":FileName:"'"
+
+       CASE TYPE = "EDAXMAP"
+	   PERFORM "DELETE &EDAXMAP& '":FileName:"'"
+
+       CASE TYPE = "EDADS"
+	   PERFORM "DELETE EDA_DATASOURCE '":FileName:"'"
+       CASE 1
+	   PERFORM "DELETE ":TYPE:" '":FileName:"'"
+
+   END CASE
+RETURN
+
+***********************************************************************
+*
+* Subroutine to convert the intermediate File to XMAP file
+*     input: id, overwrite
+*
+***********************************************************************
+ClearTable:
+    XFileName = TRIM(X_PARAMS)
+
+    ExLine  = "CLEAR.FILE ":XFileName 
+    GOSUB ExecECL
+RETURN
+
+***********************************************************************
+*
+* Subroutine to convert the intermediate File to XMAP file
+*     input: id, overwrite
+*
+***********************************************************************
+DB2XML:
+    XDocName = TRIM(X_PARAMS<1>)
+    XMapName = TRIM(X_PARAMS<2>)
+    Xcond    = TRIM(X_PARAMS<3>)
+
+    CALL *DBTOXML(XDocName, XML.TO.FILE, XMapName, XML.FROM.FILE, Xcond, st)
+
+    IF st = XML.ERROR THEN
+        X_ERROR = ETOOL.TOXMLFAIL
+	X_OUTDATA = "Failed to convert to XML docuemnt."
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to convert the intermediate File to XMAP file
+*     input: id, overwrite
+*
+***********************************************************************
+XML2DB:
+    XDocName = TRIM(X_PARAMS<1>)
+    XMapName = TRIM(X_PARAMS<2>)
+
+    CALL *XMLTODB(XDocName, XML.FROM.FILE, XMapName, XML.FROM.FILE, st)
+    IF st = XML.ERROR THEN
+	X_ERROR = ETOOL.TODBFAIL
+	X_OUTDATA = "Failed to convert XML document to database files."
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to setup/create a new account
+*     input: acctpath;  
+*  
+***********************************************************************
+NewAcct:
+    AcctPath = TRIM(X_PARAMS<1>)
+    AcctName = TRIM(X_PARAMS<2>)
+    ForceFlag = TRIM(X_PARAMS<3>)
+    AcctFlavor = TRIM(X_PARAMS<4>)
+    LoginFlag = TRIM(X_PARAMS<5>) ;* Support 10.2
+
+    IF AcctFlavor = "" THEN
+	AcctFlavor = "NEWACC"
+    END
+
+    * Check the Account TYPE
+    ACCTYPE = 0
+    OPEN "","VOC" TO tmpvoc ELSE ACCTYPE = 1
+    READ tmprec FROM tmpvoc, "RELLEVEL" ELSE ACCTYPE = 1
+    * 34257 Add INFORMATION, IDEAL, and PIOPEN flavors to exlcude
+    IF tmprec<3> <> "NEWACC" AND tmprec<3> <> "ADMIN" AND tmprec<3> <> "PIOPEN" AND tmprec<3> <> "INFORMATION" AND tmprec<3> <> "IDEAL" THEN
+       ACCTYPE = 1
+    END
+    CLOSE tmpvoc
+
+    PathExists = 0
+    * test if this path exists or not.
+    * mkdir would fail if the path exists already.
+    ShCmd = "cd ":AcctPath
+    GOSUB ShellCmd
+    IF X_OUT = "" THEN 
+	PathExists = 1
+    END
+
+  IF PathExists = 0 THEN
+    * Create ACCOUNT PATH
+    IF ForceFlag THEN
+       * Create account path
+       IF OS.TYPE = "UNIX" THEN
+          ShCmd = "mkdir -p ":AcctPath
+       END ELSE
+          ShCmd = "mkdir ":AcctPath
+       END
+       GOSUB ShellCmd
+       IF X_OUT <> "" THEN 
+          X_ERROR = ETOOL.CREATEFAIL
+          X_OUTDATA = X_OUT
+         RETURN
+       END
+    END
+  END
+    
+    * change to this account path
+    ShCmd = "cd ":AcctPath
+    GOSUB ShellCmd
+    IF X_OUT <> "" THEN 
+	X_ERROR = ETOOL.WRONGPATH
+	X_OUTDATA = X_OUT
+	RETURN
+    END
+
+    GOSUB TestVOC
+    IF VOCFLAG THEN
+        WRITEV AcctPath TO UDACCOUNT, AcctName,11 ON ERROR
+	    X_ERROR = ETOOL.WRITEFAIL
+	    X_OUTDATA = "Failed to add the account info into UV.ACCOUNT."
+           RETURN
+        END
+    END
+
+
+    * Create a new ACCOUNT
+    IF OS.TYPE = "UNIX" THEN
+    	ShCmd = "cd ":AcctPath:"; ":UDHOME:"/bin/mkaccount ":AcctFlavor
+    END ELSE 
+        ShCmd = "(cd ":AcctPath:" && ":UDHOME:"\bin\mkaccount ":AcctFlavor:")"
+    END
+    GOSUB ShellCmd
+    X_OUTDATA = X_OUT
+    GOSUB LOG
+    
+    IF LoginFlag Then
+       * Write the default login paragraph
+       OPENPATH UDHOME:OS.SEP:"sample" TO Temp THEN
+          READ LoginPara FROM Temp, "LOGIN" THEN
+             OPENPATH AcctPath:OS.SEP:"VOC" TO VocFvar THEN
+                IF ACCTYPE = 1 THEN
+                   WRITE LoginPara TO VocFvar, AcctName
+                END ELSE
+                   WRITE LoginPara TO VocFvar, "LOGIN"
+                END
+                CLOSE VocFvar
+             END ELSE
+                X_ERROR = ETOOL.OPENFAIL
+                X_OUTDATA = "Failed to open the VOC file for new account ":AcctName
+                RETURN
+             END
+          END
+          CLOSE Temp
+       END
+    END
+
+    GOSUB TestVOC
+    IF VOCFLAG THEN
+        WRITEV AcctPath TO UDACCOUNT, AcctName, 11 ON ERROR
+	    X_ERROR = ETOOL.WRITEFAIL
+	    X_OUTDATA = "Failed to add the account info into UV.ACCOUNT."
+        END
+    END ELSE
+	X_ERROR = ETOOL.NEWACCT
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to remove a UV account, flag indicate remove content
+*     input: id, flag
+*  
+***********************************************************************
+DeleteAcct:
+    ACCT_ID = TRIM(X_PARAMS<1>)
+    Flag    = TRIM(X_PARAMS<2>)
+
+    * To delete an account, we have to logto another account because Windows
+    * doesn't permit the removal of directories if you in them. We will
+    * logto the UV account to perform these operations
+    EXECUTE 'LOGTO UV' SETTING dummy
+    IF NOT(dummy < 0) THEN
+
+    * Delete from UV.ACCOUNT only
+    IF Flag = 0 THEN
+        DELETE UDACCOUNT, ACCT_ID
+        X_OUTDATA = "DeleteAcct- Delete of UV.ACCOUNT record succeeded for account ":ACCT_ID
+        ErrorAndClearXOUTDATA = 1
+	RETURN
+    END
+
+    READ Rec FROM UDACCOUNT, ACCT_ID ELSE 
+	X_ERROR = ETOOL.WRONGACCTID
+	X_OUTDATA = "Invalid account name ":ACCT_ID
+	RETURN
+    END
+    AcctPath = Rec<11>
+    
+    HUSH OFF  SETTING pre_status
+    GOSUB TestVOC
+    IF VOCFLAG = 0 THEN
+	X_ERROR = ETOOL.WRONGPATH
+	X_OUTDATA = "Invalid account path:":AcctPath:" for account ":ACCT_ID
+	RETURN
+    END
+
+    * Remove the content 
+    IF OS.TYPE = "UNIX" THEN
+	ShCmd = "cd ":AcctPath:"; rm -rf *"
+    END ELSE
+	ShCmd = "(cd ":AcctPath:" &&  cd .. && rmdir /S /Q ":AcctPath
+	ShCmd := " && mkdir ":AcctPath:")"
+    END
+    GOSUB ShellCmd
+    X_OUTDATA = X_OUT
+    IF X_OUTDATA <> "" THEN
+	X_ERROR = ETOOL.RMACCT
+	RETURN
+    END
+
+    GOSUB TestVOC
+    IF VOCFLAG  THEN
+    X_ERROR = ETOOL.RMACCT
+    X_OUTDATA = X_OUT
+    END ELSE
+       DELETE UDACCOUNT, ACCT_ID
+       X_OUTDATA = "DeleteAcct succeeded for account ":ACCT_ID
+       ErrorAndClearXOUTDATA = 1
+    END
+
+    END ELSE
+       X_ERROR = ETOOL.WRONGPATH
+       X_OUTDATA = "Failed to LOGTO the UV account to perform DeleteAcct operations"
+    END
+    HUSH  pre_status
+RETURN
+
+***********************************************************************
+*
+* Subroutine to create a UV file
+*     input: filename, blksize, modulo, hashtype, dynamic, RFS
+*  
+***********************************************************************
+CreateFile:
+    
+    * Dynamic file parameters
+    MiniMod = ''
+    GroupSz = ''
+    LargRec = ''
+    SplitLd = ''
+    MergeLd = ''
+    HashAlg = ''
+    
+    * Static file parameters
+    Mod     = ''
+    Sep     = ''
+    Type    = ''
+    
+    * Common parameters
+    FileName = ''
+    StatDyn  = ''
+    h64bitFlg = ''
+    
+    * Parameters from the tools
+    FileName = TRIM(X_PARAMS<1>)
+    StatDyn  = TRIM(X_PARAMS<2>)
+    IF StatDyn = 'STATIC' THEN
+       Sep       = TRIM(X_PARAMS<3>)
+       Mod       = TRIM(X_PARAMS<4>)
+       Type      = TRIM(X_PARAMS<5>)
+       h64bitFlg = TRIM(X_PARAMS<6>)
+    END ELSE
+       MiniMod   = TRIM(X_PARAMS<3>)
+       GroupSz   = TRIM(X_PARAMS<4>)
+       LargRec   = TRIM(X_PARAMS<5>)
+       SplitLd   = TRIM(X_PARAMS<6>)
+       MergeLd   = TRIM(X_PARAMS<7>)
+       HashAlg   = TRIM(X_PARAMS<8>)
+       h64bitFlg = TRIM(X_PARAMS<9>)
+    END
+    
+    OPEN "","VOC" TO tmpvoc ELSE ACCTYPE = 1
+    READ tmprec FROM tmpvoc, "RELLEVEL" ELSE ACCTYPE = 1
+    * 34257 Add INFORMATION, IDEAL, and PIOPEN flavors to exlcude
+    IF tmprec<3> <> "NEWACC" AND tmprec<3> <> "ADMIN" AND tmprec<3> <> "PIOPEN" AND tmprec<3> <> "INFORMATION" AND tmprec<3> <> "IDEAL" THEN
+       ACCTYPE = 1
+    END ELSE
+       ACCTYPE = 0
+    END
+    *CLOSE tmpvoc
+
+    * let's check if the file exists or not
+    VOCExists = @FALSE
+    FileExists = @FALSE
+    DictExists = @FALSE
+    OPEN FileName TO F1 THEN
+       CLOSE F1
+	VOCExists = @TRUE
+    END ELSE
+	VOCMissing = @TRUE
+    END
+    OPENPATH '.':OS.SEP:FileName TO tmpFile ON ERROR
+	X_ERROR=ETOOL.FILEEXIST
+	X_OUTDATA="An operating system file already exists, and failed to access."
+	RETURN
+    END THEN
+	CLOSE tmpFile
+	FileExists = @TRUE
+    END ELSE
+	IF -2 <> STATUS() THEN
+		X_ERROR=ETOOL.FILEEXIST
+		X_OUTDATA="An operating system file '":FileName:"' already exists, and not accessible."
+		RETURN
+	END
+    END
+    OPENPATH '.':OS.SEP:"D_":FileName TO tmpFile ON ERROR 
+	X_ERROR=ETOOL.FILEEXIST
+	X_OUTDATA="An operating system file already exists, and failed to access."
+	RETURN
+    END THEN
+	CLOSE tmpFile
+	DictExists = @TRUE
+    END ELSE
+	IF -2 <> STATUS() THEN
+		X_ERROR=ETOOL.FILEEXIST
+		X_OUTDATA="An operating system file 'D_":FileName:"' already exists, and not accessible."
+		RETURN
+	END
+    END
+
+    IF VOCExists AND FileExists AND DictExists THEN
+	RETURN
+    END ELSE IF NOT(VOCExists) AND FileExists AND DictExists THEN
+	* just add voc entry
+	WRITE 'F':@FM:FileName:@FM:"D_":FileName ON tmpvoc, FileName ON ERROR
+		X_ERROR=ETOOL.WRITEDICTFAIL
+		X_OUTDATA="Failed to add VOC entry '":FileName:"'"
+		RETURN
+	END
+    END ELSE IF VOCExists THEN
+	X_ERROR=ETOOL.FILEEXIST
+	X_OUTDATA="VOC entry exists. File not created."
+	RETURN
+    END ELSE IF FileExists OR DictExists THEN
+	X_ERROR=ETOOL.FILEEXIST
+	X_OUTDATA="An operating system file already exists. File not created."
+	RETURN
+  END ELSE
+
+    IF ACCTYPE = 1 THEN
+       * PICK style account
+       IF StatDyn = "STATIC" THEN
+          ExeCmd = "CREATE.FILE ":FileName:" 3,2,18 ":Mod:",":Sep:",":Type
+          IF h64bitFlg THEN
+             ExeCmd := " 64BIT"
+          END
+       END ELSE
+          ExeCmd  = "CREATE.FILE ":FileName:" 3,2,18 DYNAMIC"
+          ExeCmd := " MINIMUM.MODULUS ":MiniMod:" GROUP.SIZE ":GroupSz
+          ExeCmd := " LARGE.RECORD ":LargRec:" SPLIT.LOAD ":SplitLd
+          ExeCmd := " MERGE.LOAD ":MergeLd:" ":HashAlg
+          IF h64bitFlg THEN
+             ExeCmd := " 64BIT"
+          END
+       END
+    END ELSE
+       * Ideal account
+       IF StatDyn = "STATIC" THEN
+	  IF Type = "1" OR Type = "19" OR Type = "25" THEN
+              ExeCmd = "CREATE.FILE ":FileName:" ":Type
+	  END ELSE
+              ExeCmd = "CREATE.FILE ":FileName:" ":Type:" ":Mod:" ":Sep
+              IF h64bitFlg THEN
+                 ExeCmd := " 64BIT"
+              END
+	  END
+       END ELSE
+          ExeCmd  = "CREATE.FILE ":FileName:" DYNAMIC"
+          ExeCmd := " MINIMUM.MODULUS ":MiniMod:" GROUP.SIZE ":GroupSz
+          ExeCmd := " LARGE.RECORD ":LargRec:" SPLIT.LOAD ":SplitLd
+          ExeCmd := " MERGE.LOAD ":MergeLd:" ":HashAlg
+          IF h64bitFlg THEN
+             ExeCmd := " 64BIT"
+          END
+       END
+    END
+*X_ERROR = 9
+*X_OUTDATA = ExeCmd
+*RETURN
+    HUSH OFF SETTING pre_status
+    EXECUTE ExeCmd CAPTURING X_OUT SETTING dummy
+    HUSH  pre_status
+    IF dummy < 0 THEN
+       X_ERROR = ETOOL.CREATEFAIL
+       X_OUTDATA = X_OUT
+       RETURN
+    END
+  END
+
+
+    CLOSE tmpvoc
+    OPEN FileName TO F1 THEN
+       CLOSE F1
+    END ELSE
+       X_OUTDATA = X_OUT
+       X_ERROR = ETOOL.CREATEFAIL
+    END
+    
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to read DICT info
+*     input: dictfile id: DICTFILE_FD
+*  
+***********************************************************************
+ReadDictContent:
+
+    SELECT DICTFILE_FD
+    DONE = FALSE
+    FLAG = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	READ Rec FROM DICTFILE_FD, ID ELSE 
+	    X_ERROR = ETOOL.NODICTID
+	    X_OUTDATA = "Cannot read dict item: ":ID:" from DICT of ":FILE_NAME
+	    PERFORM "CLEARSELECT"
+	    RETURN
+	END
+
+	IF FLAG THEN
+           *X_OUTDATA = X_OUTDATA:@IM:ID:@FM:Rec<1>:@FM:Rec<2>:@FM:Rec<3>:@FM:Rec<4>:@FM:Rec<5>:@FM:Rec<6>:@FM:Rec<7>
+           X_OUTDATA = X_OUTDATA:@IM:ID:@FM:Rec
+	END ELSE
+           *X_OUTDATA = ID:@FM:Rec<1>:@FM:Rec<2>:@FM:Rec<3>:@FM:Rec<4>:@FM:Rec<5>:@FM:Rec<6>:@FM:Rec<7>
+           X_OUTDATA = ID:@FM:Rec
+            FLAG = TRUE
+	END
+
+    REPEAT
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to read DICT info
+*     input: filename
+*  
+***********************************************************************
+ReadDICT:
+    FILE_NAME = TRIM(X_PARAMS) 
+
+    *ExLine  = 'SSELECT DICT ':FILE_NAME:' WITH TYPE = "D" "I" "PH" "X"'
+    *ExLine  = 'SSELECT DICT ':FILE_NAME
+    *GOSUB ExecECL
+
+    OPEN "DICT", FILE_NAME TO DICTFILE_FD ELSE 
+	X_ERROR = ETOOL.OPENDICTFAIL
+	X_OUTDATA = "Failed to open DICT file for ":FILE_NAME
+	PERFORM "CLEARSELECT"
+	RETURN
+    END
+
+    GOSUB ReadDictContent
+
+    CLOSE DICTFILE_FD
+RETURN
+
+***********************************************************************
+*
+* Subroutine to write DICT info into dictionary file
+*     input: filename, dictinfo
+*  
+***********************************************************************
+WriteDICT:
+    FILE_NAME = TRIM(X_PARAMS<1>) 
+    DICT_INFO = FIELD(X_PARAMS, @FM, 2, COUNT(X_PARAMS, @FM)+1)
+
+    FORCE_FLAG=1
+
+    LOCATE ETOOL.SIG_ORIG_DATA IN DICT_INFO SETTING DAT_ORIG_NO THEN
+        DAT_ORIG = FIELD(DICT_INFO, @FM, DAT_ORIG_NO+1,  COUNT(DICT_INFO, @FM))
+        DICT_INFO = FIELD(DICT_INFO, @FM, 1, DAT_ORIG_NO-1)
+        LOCATE ETOOL.SIG_FORCE_FLAG IN DAT_ORIG SETTING FORCE_FLG_NO THEN
+            FORCE_FLAG= FIELD(DAT_ORIG, @FM, FORCE_FLG_NO+1, COUNT(DAT_ORIG, @FM))
+            DAT_ORIG=FIELD(DAT_ORIG, @FM, 1, FORCE_FLG_NO-1)
+        END ELSE
+            FORCE_FLAG=0
+        END
+    END ELSE
+        DAT_ORIG_NO = -1
+    END
+
+
+
+    TRANSACTION START THEN
+	OPEN "DICT", FILE_NAME TO DICTFILE_FD ELSE 
+	    X_ERROR = ETOOL.OPENDICTFAIL
+	    X_OUTDATA = "Failed to open DICT file for ":FILE_NAME
+	    TRANSACTION ABORT
+	    RETURN
+	END
+
+	FILELOCK  DICTFILE_FD, "EXCLUSIVE" ON ERROR
+	    X_ERROR = ETOOL.OPT_LOCKFAIL
+	    X_OUTDATA = "Failed to apply lock on DICT file for ":FILE_NAME
+	    TRANSACTION ABORT
+	    RETURN
+	END LOCKED
+	    X_ERROR = ETOOL.OPT_LOCKFAIL
+	    X_OUTDATA = "Failed to apply lock on DICT file for ":FILE_NAME
+	    TRANSACTION ABORT
+	    RETURN
+	END
+
+	IF DAT_ORIG_NO > 0 AND FORCE_FLAG=0 THEN
+            * let's do optimistic locking
+	    * Read current dict content first
+	    GOSUB ReadDictContent
+	    IF X_ERROR <> 0 THEN
+		CLOSE DICTFILE_FD
+		TRANSACTION ABORT
+		RETURN
+	    END
+	    IF DAT_ORIG <> X_OUTDATA THEN
+		X_ERROR = ETOOL.OPT_DATACHANGED
+		X_OUTDATA = "The DICT file for ":FILE_NAME:" has been changed."
+		CLOSE DICTFILE_FD
+		TRANSACTION ABORT
+		RETURN
+            END
+	END
+
+	* clear the dict file
+	SELECT DICTFILE_FD
+	DONE = FALSE
+	LOOP
+		READNEXT ID ELSE DONE = TRUE
+		UNTIL DONE DO
+		    DELETE DICTFILE_FD, ID ON ERROR
+			X_ERROR = ETOOL.OPENDICTFAIL
+			X_OUTDATA = "Failed to update DICT file for ":FILE_NAME
+			TRANSACTION ABORT
+			RETURN
+                    END ELSE
+			X_ERROR = ETOOL.OPENDICTFAIL
+			X_OUTDATA = "Failed to update DICT file for ":FILE_NAME
+			TRANSACTION ABORT
+			RETURN
+                    END
+	REPEAT
+	* write new content to the dict file
+	DICT_CNT = COUNT(DICT_INFO, @IM)
+	FOR I = 1 TO DICT_CNT + 1
+	    dictitem = FIELD(DICT_INFO, @IM, I)
+	    ID = dictitem<1>
+	    Rec = FIELD(dictitem, @FM, 2, 999)
+
+	    WRITE Rec TO DICTFILE_FD, ID ON ERROR 
+		X_ERROR = ETOOL.WRITEDICTFAIL
+		X_OUTDATA = "Cannot write dict item: ":ID:" to DICT of ":FILE_NAME
+		TRANSACTION ABORT
+		RETURN
+	    END
+	NEXT
+
+	FILEUNLOCK DICTFILE_FD ON ERROR
+		* don't care
+	END
+
+	TRANSACTION COMMIT THEN
+        END ELSE
+	    TRANSACTION ABORT
+	    X_ERROR = ETOOL.WRITEDICTFAIL
+	    X_OUTDATA = "Cannot commit modification on DICT file for ":FILE_NAME
+        END
+	CLOSE DICTFILE_FD
+    END ELSE
+	    X_ERROR = ETOOL.WRITEDICTFAIL
+	    X_OUTDATA = "Cannot write dict item: ":ID:" to DICT of ":FILE_NAME
+    END
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to Read data record from a file
+*     input: filename, start # rec, end # of rec
+*  
+***********************************************************************
+ReadFile:
+    FILE_NAME = TRIM(X_PARAMS<1>) 
+    Qcond     = TRIM(X_PARAMS<2>) 
+    Start_Rec = TRIM(X_PARAMS<3>) 
+    End_Rec   = TRIM(X_PARAMS<4>) 
+
+    IF Start_Rec = "" THEN
+	Start_Rec = -1
+    END
+    IF End_Rec = "" THEN
+	End_Rec = -1
+    END
+
+    IF Qcond = "" THEN
+    	ExLine  = "SSELECT ":FILE_NAME
+    END ELSE
+	ExLine  = "SSELECT ":FILE_NAME:" WITH ":Qcond
+    END
+
+    GOSUB ExecECL
+
+    TotalRec = @SYSTEM.RETURN.CODE
+
+    OPEN "", FILE_NAME TO F1 ELSE 
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":FILE_NAME
+	PERFORM "CLEARSELECT"
+	RETURN
+    END
+
+    X_OUTDATA = ""
+    DONE = FALSE
+    NumOfRec = 0
+    IdxOfRec = 0
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+	IdxOfRec += 1
+	IF End_Rec <> -1 AND IdxOfRec > End_Rec THEN
+	    PERFORM "CLEARSELECT"
+	    DONE = TRUE
+	END
+    UNTIL DONE DO
+	IF IdxOfRec >= Start_Rec THEN 
+	    READ Rec FROM F1, ID ELSE 
+	    	X_ERROR = ETOOL.READFAIL
+	    	X_OUTDATA = "Cannot read record: ":ID:" from file ":FILE_NAME
+		PERFORM "CLEARSELECT"
+	    	RETURN
+	    END
+
+	    NumOfRec += 1
+	    X_OUTDATA = X_OUTDATA:@IM:ID:@FM:Rec
+	    IF LEN(X_OUTDATA) > 256000 THEN
+		PERFORM "CLEARSELECT"
+		DONE = TRUE
+	    END
+	END 
+    REPEAT
+    X_OUTDATA = TotalRec:@IM:NumOfRec:X_OUTDATA
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to update a U2 File
+*     input: filename, record list
+*  
+***********************************************************************
+UpdateFile:
+    FileName  = TRIM(FIELD(X_PARAMS, @IM, 1))
+    ForceFlag = TRIM(FIELD(X_PARAMS, @IM, 2))
+    OldRec    = TRIM(FIELD(X_PARAMS, @IM, 3))
+    NewRec    = TRIM(FIELD(X_PARAMS, @FM, 4))
+
+    OPEN "", FileName TO F1 ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":FileName
+	RETURN
+    END
+
+    IF OldRec = "" THEN 
+	AddFlag = 1
+	OldID   = NewRec<1>
+    END ELSE
+	AddFlag = 0
+	OldID   = OldRec<1>
+	OldData = FIELD(OldRec, @FM, 2, COUNT(OldRec, @FM))
+    END
+
+    RecordExist = 0
+    READU DummyRec FROM F1, OldID ON ERROR
+	X_ERROR = ETOOL.READFAIL
+	X_OUTDATA = "Read record failed."
+    END LOCKED 
+	X_ERROR = ETOOL.LOCKED
+	X_OUTDATA = "Record is locked by other user."
+    END THEN
+	RecordExist = 1
+    END ELSE
+	X_ERROR = ETOOL.READFAIL
+	X_OUTDATA = "Read record failed."
+    END
+	
+    * If try to add a record which is already there
+    IF RecordExist AND AddFlag THEN
+	IF ForceFlag = 0 THEN
+	    X_ERROR = ETOOL.RECORDEXIST
+	    X_OUTDATA = "The record is already existed in the file."
+	END 
+    END
+
+    * Check if the record is match when do update
+    IF AddFlag = 0 THEN
+	IF ForceFlag = 0 AND DummyRec <> OldRec THEN
+	    X_ERROR = ETOOL.RECORDCHANGED
+	    X_OUTDATA = "The record is changed by other user."
+	END
+    END
+
+    * IF error, release lock, return
+    IF X_ERROR THEN
+        RELEASE F1, OldID
+	CLOSE F1
+	RETURN
+    END
+
+    NewID   = NewRec<1>
+    NewData = FIELD(NewRec, @FM, 2, COUNT(NewRec, @FM))
+
+    WRITE NewData TO F1, NewID ON ERROR 
+	X_ERROR = ETOOL.WRITEFAIL
+	IF X_OUTDATA <> "" THEN
+	    X_OUTDATA = "Failed to add a record into file"
+	END ELSE
+	    X_OUTDATA = I
+	END
+    END
+
+    RELEASE F1, ID
+    CLOSE F1
+
+RETURN
+
+*** OLD version *****
+OLDUpdateFile:
+    FileName = TRIM(X_PARAMS<1>)
+    RecList = FIELD(X_PARAMS, @FM, 2, COUNT(X_PARAMS, @FM)+1)
+
+    OPEN "", FileName TO F1 ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":FileName
+	RETURN
+    END
+
+    X_OUTDATA = ""
+    REC_CNT = COUNT(RecList, @IM)
+    FOR I = 1 TO REC_CNT + 1
+	RecItem = FIELD(RecList, @IM, I)
+	ID = RecItem<1>
+	Rec = FIELD(RecItem, @FM, 2, 9999)
+
+        READU dummy FROM F1, ID THEN NULL
+	WRITE Rec TO F1, ID ON ERROR 
+	    X_ERROR = ETOOL.WRITEFAIL
+	    IF X_OUTDATA <> "" THEN
+	    	X_OUTDATA = X_OUTDATA:@FM:I
+	    END ELSE
+	    	X_OUTDATA = I
+	    END
+	END
+        RELEASE F1, ID
+    NEXT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to remove record form a U2 file
+*     input: id, record list
+*  
+***********************************************************************
+DeleteRec:
+    FileName  = TRIM(FIELD(X_PARAMS, @IM, 1))
+    ForceFlag = TRIM(FIELD(X_PARAMS, @IM, 2))
+    Record    = TRIM(FIELD(X_PARAMS, @IM, 3))
+
+    OPEN "", FileName TO F1 ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":FileName
+	RETURN
+    END
+
+    ID = Record<1>
+    Data = FIELD(Record, @FM, 2, COUNT(Record, @FM))
+
+    READU DummyRec FROM F1, NewID ON ERROR
+	X_ERROR = ETOOL.READFAIL
+	X_OUTDATA = "Read record failed."
+    END LOCKED 
+	X_ERROR = ETOOL.LOCKED
+	X_OUTDATA = "Record is locked by other user."
+    END ELSE
+	X_ERROR = ETOOL.READFAIL
+	X_OUTDATA = "Read record failed."
+    END
+	
+    * In case of no error, check if the record is changed
+    IF X_ERROR = 0 AND Data <> DummyRec THEN
+	X_ERROR = ETOOL.RECORDCHANGED
+	X_OUTDATA = "The record is changed by other user."
+    END
+
+    IF X_ERROR THEN
+	RELEASE F1, NewID
+	CLOSE F1
+	RETURN
+    END
+
+    DELETE F1, NewID ON ERROR 
+	X_ERROR = ETOOL.DELRECFAIL
+	X_OUTDATA = "Failed to delete record ":NewID:" in file ":FileName
+    END
+
+    RELEASE F1, NewID
+    CLOSE F1
+
+RETURN
+
+*****old version 
+OldDeleteRec:
+    FileName = TRIM(X_PARAMS<1>)
+    IDList = FIELD(X_PARAMS, @FM, 2, COUNT(X_PARAMS, @FM)+1)
+
+    OPEN "", FileName TO F1 ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = "Failed to open file ":FileName
+	RETURN
+    END
+
+    X_OUTDATA = ""
+    ID_CNT = COUNT(IDList, @IM)
+    FOR I = 1 TO ID_CNT + 1
+	ID = FIELD(IDList, @IM, I)
+	DELETE F1, ID ON ERROR 
+	    X_ERROR = ETOOL.DELRECFAIL
+	    IF X_OUTDATA <> "" THEN
+	    	X_OUTDATA = X_OUTDATA:@FM:I
+	    END ELSE
+	    	X_OUTDATA = I
+	    END
+	END
+    NEXT
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to remove a UDT account, flag indicate remove content
+*     input: filename, record list
+*  
+***********************************************************************
+AddRec:
+	* Can be as same as UpdateFile
+RETURN
+
+***********************************************************************
+*
+* Subroutine to create UDT file(with Dict) from XSD/DTD and 
+*		assoicaited mapfile
+*     input: id, flag
+*  
+***********************************************************************
+GenDICT:
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to generate the XSD/DTD from a DICT and associated MAP file
+*     input: id, flag
+*  
+***********************************************************************
+GenXSD:
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to copy a file 
+*     input: filename, newfile, flag
+*  
+***********************************************************************
+CopyFile:
+    FILE_NAME = TRIM(X_PARAMS<1>) 
+    NEW_NAME  = TRIM(X_PARAMS<2>) 
+    FLAG      = TRIM(X_PARAMS<3>) 
+    SRC_ACCT  = TRIM(X_PARAMS<4>) ;* 34298 Supported at 10.2 and higher
+     
+*     Check the Account TYPE
+     	ACCTYPE = 0
+     	OPEN "","VOC" TO tmpvoc ELSE ACCTYPE = 1
+     	READ tmprec FROM tmpvoc, "RELLEVEL" ELSE ACCTYPE = 1
+       * 34257 Add INFORMATION, IDEAL, and PIOPEN flavors to exlcude
+     	IF tmprec<3> <> "NEWACC" AND tmprec<3> <> "ADMIN" AND tmprec<3> <> "PIOPEN" AND tmprec<3> <> "INFORMATION" AND tmprec<3> <> "IDEAL" THEN ACCTYPE = 1
+       CLOSE tmpvoc
+       
+    * 34298 This next section of code is to support the copy file feature
+    * added for version 10.2
+    ExeCmd = "SET.FILE ":SRC_ACCT:" ":NEW_NAME:" XToolPtr"
+    EXECUTE ExeCmd SETTING dummy
+    IF dummy <> 0 THEN
+       X_OUTDATA = 'CopyFile failed- command was "SET.FILE ':SRC_ACCT:' ':NEW_NAME:' XToolPtr"'
+       X_ERROR   = ETOOL.WRITEFAIL
+       RETURN
+    END
+    * Open the q-pointer and get stats from it
+    OPEN 'XToolPtr' TO tmpfile ELSE
+       X_OUTDATA = 'Unable to open q-pointer XToolPtr'
+       X_ERROR   = ETOOL.OPENFAIL
+       RETURN
+    END
+    STATUS stats FROM tmpfile ELSE
+       X_OUTDATA = 'Unable to stat q-pointer XToolPtr'
+       X_ERROR   = ETOOL.OPENFAIL
+       RETURN
+    END
+    IF stats<21> = 30 THEN
+       FileType = 'DYNAMIC'
+       HashAlg  = FILEINFO(tmpfile,4)
+       CurrMod  = FILEINFO(tmpfile,5)
+       MiniMod  = FILEINFO(tmpfile,6)
+       GroupSz  = FILEINFO(tmpfile,7)
+       IF GroupSz = 2 THEN
+          GroupSz = 1
+       END ELSE
+          GroupSz = 2
+       END
+       LargRec  = FILEINFO(tmpfile,8)
+       MergeLd  = FILEINFO(tmpfile,9)
+       SplitLd  = FILEINFO(tmpfile,10)
+    END ELSE                     
+       FileType = stats<21>
+       IF FileType > 1 and FileType < 19 THEN
+          FileMod  = stats<22>
+          FileSep  = stats<23>
+       END ELSE
+          X_OUTDATA = 'CopyFile failed- only file types 2 - 18 and dynamic files are supported'
+          X_ERROR   = ETOOL.CREATEFAIL
+          RETURN
+       END
+    END
+    CLOSE tmpfile
+    * Create new file NEW_NAME
+    IF ACCTYPE = 1 THEN
+       * PICK style account
+       IF FileType = 'DYNAMIC' THEN
+          ExeCmd  = "CREATE.FILE ":NEW_NAME:" 3,2,18 ":FileMod:",":FileSep:",":FileType
+          ExeCmd := " MINIMUM.MODULUS ":MiniMod
+          ExeCmd := " GROUP.SIZE ":GroupSz:" LARGE.RECORD ":LargRec 
+          ExeCmd := " MERGE.LOAD ":MergeLd:" SPLIT.LOAD ":SplitLd
+          IF HashAlg = 3 THEN
+             ExeCmd := " SEQ.NUM"
+          END ELSE
+             ExeCmd := " GENERAL"
+          END
+          IF stats<32> = 5 THEN
+             ExeCmd := " 64BIT"
+          END
+          EXECUTE ExeCmd SETTING dummy
+       END ELSE
+          ExeCmd  = "CREATE.FILE ":NEW_NAME:" 3,2,18 ":FileMod:",":FileSep:",":FileType
+          IF stats<32> = 5 THEN
+             ExeCmd := " 64BIT"
+          END
+          EXECUTE ExeCmd SETTING dummy
+       END
+    END ELSE
+       * Ideal account
+       IF FileType = 'DYMANIC' THEN
+          ExeCmd  = "CREATE.FILE ":NEW_NAME:" DYNAMIC MINIMUM.MODULUS ":MiniMod
+          ExeCmd := " GROUP.SIZE ":GroupSz:" LARGE.RECORD ":LargRec 
+          ExeCmd := " MERGE.LOAD ":MergeLd:" SPLIT.LOAD ":SplitLd
+          IF HashAlg = 3 THEN
+             ExeCmd := " SEQ.NUM"
+          END ELSE
+             ExeCmd := " GENERAL"
+          END
+          IF stats<32> = 5 THEN
+             ExeCmd := " 64BIT"
+          END
+          EXECUTE ExeCmd SETTING dummy
+       END ELSE
+          ExeCmd = "CREATE.FILE ":NEW_NAME:" ":FileType:" ":FileMod:" ":FileSep
+          IF stats<32> = 5 THEN
+             ExeCmd := " 64BIT"
+          END
+          EXECUTE ExeCmd SETTING dummy
+       END
+    END
+    IF dummy < 0 THEN
+       X_OUTDATA = 'CopyFile failed- CREATE.FILE of ':NEW_NAME:' failed'
+       X_ERROR   = ETOOL.CREATEFAIL
+       RETURN
+    END
+
+    * 34257 need to make sure the copy works for all flavors
+    * EXECUTE "COPY FROM DICT ":FILE_NAME:" TO DICT ":NEW_NAME:" ALL"
+    * EXECUTE "COPY FROM ":FILE_NAME:" TO ":NEW_NAME:" ALL"
+    EXECUTE "COPYI FROM DICT XToolPtr TO DICT ":NEW_NAME:" ALL OVERWRITING" SETTING dummy
+    IF dummy < 0 THEN
+       X_OUTDATA = 'CopyFile failed- command was "COPYI FROM DICT XToolPtr TO DICT ':NEW_NAME:' ALL OVERWRITING"'
+       X_ERROR = ETOOL.CREATEFAIL
+       RETURN
+    END
+    EXECUTE "COPYI FROM XToolPtr TO ":NEW_NAME:" ALL OVERWRITING"
+    IF dummy < 0 THEN
+       X_OUTDATA = 'CopyFile failed- command was "COPYI FROM XToolPtr TO ':NEW_NAME:' ALL OVERWRITING"'
+       X_ERROR = ETOOL.CREATEFAIL
+       RETURN
+    END
+    X_OUTDATA = "CopyFile from ":FILE_NAME: " to ":NEW_NAME:' succeeded'
+    ErrorAndClearXOUTDATA = 1
+    
+RETURN
+
+
+
+***********************************************************************
+*
+* Subroutine to convert the intermediate File to XMAP file
+*     input: id, overwrite
+*
+*  not used anymore
+***********************************************************************
+*
+* Return faild if file exsit
+*
+ToXMAP1:
+    XID = TRIM(X_PARAMS)
+
+    X_OUTDATA = 0
+
+    * Read the mapinfo
+mapinfo = 1
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    * Test id, if exist, return 
+    READ rec FROM FXMLDIR, XID THEN
+	X_OUTDATA = 1
+	RETURN 
+    END
+    
+    * Convert to U2XMAP FILE
+    GOSUB ToXMAP
+
+RETURN
+
+
+*
+*  Overwrite exist file
+*
+*  not used anymore
+ToXMAP2:
+    XID = TRIM(X_PARAMS)
+
+    * Read the mapinfo
+mapinfo = 2
+
+    * Convert to U2XMAP FILE
+    GOSUB ToXMAP
+RETURN
+
+*
+* convert to MAP, put the U2XMAP under &XML&
+*
+*  not used anymore
+ToXMAP:
+
+    s1 = STR(' ', 3)
+    s2 = STR(' ', 6)
+    
+    *
+    *  Record structure for a U2XMAP record in file _U2XMAP_ under &XML&
+    *
+    *     <ROOT node>@VM<TableName>@VM<TableName>
+    *  @FM<empty_string>
+    *  @FM<dateFMT>
+    *  @FM<Cascade>
+    *  @FM<ExistRecord>
+    *  @FM<IngoreNamespace>
+    *  @FM<uri>   @VM<uri>   @VM<uri>
+    *  @FM<prefix>@VM<prefix>@VM<prefix>
+    *
+    *  @FM<map1>@VM<mapname>
+    *           @VM<StartNode>
+    *           @VM<TableName>
+    *           @VM<Action>
+    *           @VM<ColumnMap>@SVM<ColumnName>@SVM<Node> 
+    *           @VM<GenerateID>@SVM<ColumnName>@SVM<XFIELD>@SVM<SUBR>
+    *           @VM<TableMap>@SVM<Mapname>@SVM<Node>
+    *           @VM<OrderColumn>@SVM<ColumnName>@SVM<Generate>
+    *
+    *  @FM<map2>@VM<mapname>
+    *           @VM<StartNode>
+    *           @VM<TableName>
+    *           @VM<Action>
+    *           @VM<ColumnMap>@SVM<ColumnName>@SVM<Node> 
+    *           @VM<GenerateID>@SVM<ColumnName>@SVM<XFIELD>@SVM<SUBR>
+    *           @VM<TableMap>@SVM<Mapname>@SVM<Node>
+    *           @VM<OrderColumn>@SVM<ColumnName>@SVM<Generate>
+    *
+    *  @FM<map3>@VM<mapname>
+    *           @VM<StartNode>
+    *           @VM<TableName>
+    *           @VM<Action>
+    *           @VM<ColumnMap>@SVM<ColumnName>@SVM<Node> 
+    *           @VM<GenerateID>@SVM<ColumnName>@SVM<XFIELD>@SVM<SUBR>
+    *           @VM<TableMap>@SVM<Mapname>@SVM<Node>
+    *           @VM<OrderColumn>@SVM<ColumnName>@SVM<Generate>
+    *
+    *  @FM<RelateClassMap>@VM<TableName for PartentKey>
+    *                     @VM<ColumenName for ParentKey>
+    *                     @VM<Genereated>
+    *                     @VM<TableName for ChildKey>
+    *                     @VM<ColumneName for ChildKey>
+    *
+    *  @FM<RelateClassMap>@VM<TableName for PartentKey>
+    *                     @VM<ColumenName for ParentKey>
+    *                     @VM<Genereated>
+    *                     @VM<TableName for ChildKey>
+    *                     @VM<ColumneName for ChildKey>
+    *  
+    *
+    
+    * GET OPTIONS
+    
+    empty_string = mapinfo<1>
+    dateFMT      = mapinfo<2>
+    Cascade      = mapinfo<3>
+    ExistRecord  = mapinfo<4>
+    IngoreNS     = mapinfo<5>
+    Prefix       = mapinfo<6>
+    URI          = mapinfo<7>
+    
+    
+    myMAP     = '<?xml version="1.0" ?>'
+    myMAP<-1> = s1:'<!-- DOCTYPE U2XMAP SYSTEM "U2XMAP.DTD" -->'
+    myMAP<-1> = s1:'<U2XMAP Version="1.0" Name = "':XID:'">'
+    myMAP<-1> = s1:'<OPTIONS>'
+    
+    IF empty_string = 1 THEN
+    	myMAP<-1> = s2:'<EmptyString IsNull = "ON"/>'
+    END
+    
+    IF dateFMT <> "" THEN
+    	myMAP<-1> = s2:'<DateFormat Format = "':dateFMT:'"/>'
+    END
+    
+    IF Cascade = 1 THEN
+    	myMAP<-1> = s2:'<Cascade/>'
+    END
+    
+    IF ExistRecord = 1 THEN
+    	myMAP<-1> = s2:'<ExistRecord Action = "Replace"/>'
+    END ELSE IF ExistRecord = 2 THEN
+    	myMAP<-1> = s2:'<ExistRecord Action = "Append"/>'
+    END
+    
+    IF IngoreNS = 1 THEN
+    	myMAP<-1> = s2:'<IgnoreNameSpace/>'
+    END
+    
+    ns_cnt = COUNT(Prefix, @VM)
+    
+    FOR I = 1 TO ns_cnt+1 
+    	uri = URI<1, I>
+    	prefix = Prefix<1, I>
+    	IF IngoreNS AND prefix <> "" THEN
+    	    X_ERROR = ETOOL.NSERROR
+    	    RETURN 
+    	END
+    
+    	str = s2:"<NameSpace"
+    	IF prefix <> "" THEN
+    	    str = str:' Prefix = "':prefix:'"'
+    	END
+    	str = str:' URI = "':uri:'"/>'
+    	myMAP<-1> = str
+    NEXT
+    myMAP<-1> = s1:'</OPTIONS>'
+    
+    
+    *
+    * GET MAPs
+    *
+    map_cnt = COUNT(mapinfo, @FM)
+    FOR I = 8 TO map_cnt+1
+    	map = mapinfo<I>
+    	IF map<1, 1> = 1 THEN
+    	    * For TABLECLASSMAP
+    	    GOSUB CreateMAP
+    	END ELSE IF map<1, 1> = 2 THEN
+    	    * For RelatedTable
+    	    GOSUB CreateRelation
+    	END ELSE 
+    	    * wrong information
+    	END
+    NEXT
+    
+    
+    myMAP<-1> = ""
+    myMAP<-1> = "</U2XMAP>"
+    
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    WRITE myMAP TO FXMLDIR, XID ON ERROR
+    	X_ERROR = ETOOL.XMLWRITEFAIL
+    	RETURN
+    END
+    
+    RETURN 
+    
+    
+    *
+    *
+    * Get Table Class map information, create TABLECLASSMAP
+    *
+    *  @FM<map1>@VM<mapname>
+    *           @VM<StartNode>
+    *           @VM<TableName>
+    *           @VM<Action>
+    *           @VM<ColumnMap>@SVM<ColumnName>@SVM<Node>
+    *           @VM<GenerateID>@SVM<ColumnName>@SVM<XFIELD>@SVM<SUBR>
+    *           @VM<TableMap>@SVM<Mapname>@SVM<Node>
+    *           @VM<OrderColumn>@SVM<ColumnName>@SVM<Generate>
+    *
+    *
+    CreateMAP:
+    
+    * TABLE CLASS MAP HEADER
+    myMAP<-1> = ""
+    myMAP<-1> = s1:'<TABLECLASSMAP MapName   = "':map<1, 2>:'"'
+    myMAP<-1> = s1:'               StartNode = "':map<1, 3>:'"'
+    myMAP<-1> = s1:'               TableName = "':map<1, 4>:'"'
+    * For ACTION
+    IF map<1, 5> = 1 THEN
+    	myMAP<-1> = s1:'               Action    = "Replace">'
+    END ELSE IF map<1, 5> = 2 THEN
+    	myMAP<-1> = s1:'               Action    = "Append">'
+    END ELSE
+    	myMAP := '>'
+    END
+    
+    * TABLE CLASS MAP BODY (Column MAP, generateID, ORDER COLUMN ...
+    col_cnt = COUNT(map, @VM)
+    FOR J = 6 TO col_cnt+1 
+        colmap = map<1, J>
+    
+        type = colmap<1, 1, 1>
+        name = colmap<1, 1, 2>
+        node = colmap<1, 1, 3>
+    
+        IF type = 1 THEN
+    	myMAP<-1> = s2:'<ColumnMap Node = "':node:'" Column = "':name:'"/>'
+        END ELSE IF type = 2 THEN
+    	myMAP<-1> = s2:'<GenerateID Column = "':name:'"/>'
+        END ELSE IF type = 3 THEN
+    	myMAP<-1> = s2:'<GenerateID Column = "':name:'" XFIELD = "':node:'"/>'
+        END ELSE IF type = 4 THEN
+    	myMAP<-1> = s2:'<GenerateID Column = "':name:'" SUBR = "':node:'"/>'
+        END ELSE IF type = 5 THEN
+    	myMAP<-1>=s2:'<TableMap Node = "':node:'" MapName = "':name:'"/>'
+        END ELSE IF type = 6 THEN
+    	myMAP<-1>=s2:'<OrderColumn Column = "':name:'" Generate = "':node:'"/>'
+        END
+    
+    NEXT
+    
+    *           @VM<ColumnMap>@SVM<ColumnName>@SVM<Node>
+    *           @VM<GenerateID>@SVM<ColumnName>@SVM<XFIELD>@SVM<SUBR>
+    *           @VM<TableMap>@SVM<Mapname>@SVM<Node>
+    *           @VM<OrderColumn>@SVM<ColumnName>@SVM<Generate>
+    
+    * TABLE CLASS MAP END
+    myMAP<-1> = s1:'</TABLECLASSMAP>'
+    
+    RETURN
+    
+    
+    *
+    *
+    * Get relationship information, create the MAP
+    *
+    *  @FM<RelateClassMap>@VM<TableName for PartentKey>
+    *                     @VM<ColumenName for ParentKey>
+    *                     @VM<Genereated>
+    *                     @VM<TableName for ChildKey>
+    *                     @VM<ColumneName for ChildKey>
+    *  
+    *
+    CreateRelation:
+    
+    myMAP<-1> = ""
+    myMAP<-1> = s1:'<RelatedTable>'
+    myMAP<-1> = s2:'<MapParentKey TableName = "':map<1, 2>:'"'
+    myMAP<-1> = s2:'              Column = "':map<1, 3>:'"'
+    myMAP<-1> = s2:'              KeyGenerate = "':map<1, 4>:'"/>'
+    myMAP<-1> = s2:'<MapChildKey  TableName = "':map<1, 5>:'"'
+    myMAP<-1> = s2:'              Column = "':map<1, 6>:'"/>'
+    myMAP<-1> = s1:'</RelatedTable>'
+    
+RETURN
+    
+    
+*************************************************************************
+*
+*   GetDrivers - Get a list of drivers for NT, Unix only return /
+*
+*************************************************************************
+GetDrivers:
+    X_OUTDATA = SYSTEM(9005)
+RETURN
+
+
+*************************************************************************
+*   OSBrowse - Returns a list of the directories and files
+*              contained in a specified directory.
+*
+*   The directory to list is determined by combining the two input 
+*   arguments, start directory and directory modifier.
+*
+*   Example 1:
+*	Start directory = "/u1/uv"
+*	Modifier        = ".."
+*	Directory listed will be "/u1"
+*
+*   Example 2:
+* 	Start directory = "/u1/uv"
+*	Modifier        = "catdir"
+*	Directory listed will be "/u1/uv/catdir"
+*
+*   If the start directory is not specified, then the UDHOME/UVHOME is used 
+*
+*   If the start directory turns out to be a file, or if it doesn't exist, 
+*   then the last component  of the pathname is removed, and the parent
+*   directory is listed. If that doesn't exist an error is returned.
+*
+*   Input:
+*	Start directory
+*  	Directory modifier
+*   Output:
+*	Modified directory
+*	List of directories (prefixed by "D") and files (prefixed by "F")
+***************************************************************************
+OSBrowse:
+    BrowsePath = TRIM(X_PARAMS<1>)
+    Modifier = TRIM(X_PARAMS<2>)
+
+    BrowsePath = CHANGE(BrowsePath, OS.SEP:OS.SEP, OS.SEP)
+    IF BrowsePath <> "" THEN
+	BEGIN CASE
+            CASE Modifier = ".."         ; * going up a level
+               BrowsePath = FIELD(BrowsePath,OS.SEP,1,COUNT(BrowsePath,OS.SEP))
+
+               IF OS.TYPE = "UNIX" THEN
+                  * If we've gone back so far that there's nothing left, set
+                  * path to root
+                  IF BrowsePath = "" THEN BrowsePath = OS.SEP
+
+               END ELSE
+                  * If we've gone so far back we've stripped the separator from
+                  * the drive, put it back
+                  IF LEN(BrowsePath) = 2 AND BrowsePath[2, 1] = ":" THEN
+                     BrowsePath := OS.SEP
+                  END
+               END
+
+            CASE Modifier = ""           ; * no modifier, do nothing
+
+            CASE 1
+               * Going down a level. If we're at the top (eg. "/" or "d:\")
+               * then we don't need to put the separator in
+               IF BrowsePath[LEN(BrowsePath), 1] <> OS.SEP THEN
+                  BrowsePath := OS.SEP:X_PARAMS<2>
+               END ELSE
+                  BrowsePath := X_PARAMS<2>
+               END
+	END CASE
+    END ELSE
+	BrowsePath = UDHOME
+    END
+
+    IF NOT (OS.TYPE="NT" AND LEN(BrowsePath) >= 3 AND BrowsePath[LEN(BrowsePath), 1] = OS.SEP AND BrowsePath[LEN(BrowsePath)-1, 1] = ':') THEN
+	
+      * on Windows, OPENPATH fails on C:\, D:\, etc., don't try on drive.
+      * OPENPATH doesn't like quoted path, remove quotes if present
+      OPENPATH BrowsePath TO file.variable ON ERROR 
+	X_ERROR = ETOOL.NODIRECTORY
+	X_OUTDATA = "Failed to open the directory ":BrowsePath 
+	RETURN
+      END THEN
+	CLOSE file.variable
+	* continue
+      END ELSE
+	X_ERROR = ETOOL.NODIRECTORY
+	X_OUTDATA = "Unable to open the directory ":BrowsePath:". Possibly it does not exist or you do not have permissions to access it."
+	RETURN
+      END
+    END
+
+    * check if the path contains any white space, if yes, we need to use quotes
+    IF INDEX(BrowsePath, " ", 1) <> 0  OR INDEX(BrowsePath, CHAR(9), 1) <> 0 THEN
+	
+	IF INDEX(BrowsePath, '"', 1) = 0 THEN
+		BrowsePath = DQUOTE(BrowsePath)
+	END ELSE IF INDEX(BrowsePath, "'", 1) = 0 THEN
+                BrowsePath = SQUOTE(BrowsePath)
+	END ELSE 
+                BrowsePath = "\":BrowsePath:"\"
+        END 
+    END
+
+
+    IF OS.TYPE = "UNIX" THEN
+
+	* Request a single column listing with directories suffixed with "/".
+	* If the pathname does not specify a directory, the result
+	* will start with the input pathname exactly
+
+	ShCmd = 'ls -p ':BrowsePath
+	GOSUB ShellCmd
+
+	IF X_OUT[1, LEN(BrowsePath)] = BrowsePath THEN
+
+	    * Modify the path and try again
+	    BrowsePath = FIELD(BrowsePath, OS.SEP, 1, COUNT(BrowsePath,OS.SEP))
+
+	    * If we've gone back so far that there's nothing left, set
+	    * path to root
+	    IF BrowsePath = "" THEN BrowsePath = OS.SEP
+
+	    ShCmd = 'ls -p ':BrowsePath
+	    GOSUB ShellCmd
+	    IF X_OUT[1, LEN(BrowsePath)] = BrowsePath THEN
+		* Failed again - return an error
+		X_ERROR = ETOOL.NODIRECTORY
+		X_OUTDATA = "Unable to find the directory"
+		RETURN
+	    END
+	END
+
+    END ELSE                           ; * NT
+
+	* First try to get the list of directories. This will return
+	* an error message:
+	*    - "File Not Found" if the parent directory exists but
+	*      the file either doesn't exist or is not a directory
+	*    - "The system cannot find the file specified." or
+	*      "The system cannot find the path specified." if the
+	*      parent directory doesn't exist.
+	*    - "The filename, directory name, or volume label syntax is 
+	*      incorrect" if any part of the pathname is incorrect.
+
+	* -S means exclude the system files.
+
+	ShCmd = 'dir /B/AD-S ':BrowsePath
+	GOSUB ShellCmd
+
+	CheckString = "The filename, directory name, or volume label syntax is incorrect"
+	IF X_OUT[1, LEN(CheckString)] = CheckString THEN
+            * Invalid pathname, so give up
+            X_ERROR = ETOOL.NODIRECTORY
+  	    X_OUTDATA = "Unable to find the directory"
+            RETURN
+	END
+
+	CheckString = "The system cannot find the "
+	IF X_OUT[1, LEN(CheckString)] = CheckString THEN
+            * The parent directory doesn't exist, so give up
+            X_ERROR = ETOOL.NODIRECTORY
+  	    X_OUTDATA = "Unable to find the directory"
+            RETURN
+	END
+
+	CheckString = "File Not Found"
+	IF X_OUT[1, LEN(CheckString)] = CheckString THEN
+
+	    * Modify the path and try again
+	    BrowsePath = FIELD(BrowsePath, OS.SEP, 1, COUNT(BrowsePath,OS.SEP))
+
+	    * If we've gone so far back we've stripped the separator from
+	    * the drive, put it back
+	    IF LEN(BrowsePath) = 2 AND BrowsePath[2, 1] = ":" THEN
+		BrowsePath := OS.SEP
+	    END
+
+	    * -S means no system file
+	    ShCmd = 'dir /B/AD-S ':BrowsePath
+	    GOSUB ShellCmd
+	    IF X_OUT[1, LEN(CheckString)] = CheckString THEN
+		IF LEN(BrowsePath)=3 AND BrowsePath[2, 2]=":":OS.SEP THEN
+		    * No files in root directory - 
+		    * return an empty directory listing
+		    X_OUTDATA = BrowsePath:@FM:"D.."
+		    RETURN
+		END ELSE
+		    * Failed again - return an error
+		    X_ERROR = ETOOL.NODIRECTORY
+ 	 	    X_OUTDATA = "Unable to find the directory"
+		    RETURN
+		END
+	    END
+	END
+    END
+
+    * Because we don't get the parent directory returned by "ls" or
+    * "dir", put it in by hand
+
+    * In case of U2XMAP tool, these 2 are not necessary
+    * X_OUTDATA = BrowsePath:@FM:"D.."
+
+    IF OS.TYPE = "UNIX" THEN
+
+	* Use a single column listing with directories suffixed with "/".
+	* The listing we need is already in the variable "Out"
+	Dc = DCOUNT(X_OUT, @FM)
+
+	FOR I = 1 TO Dc
+	    IF X_OUT<I> <> "" THEN
+		File = TRIM(X_OUT<I>)
+		IF File[LEN(File), 1] = "/" THEN
+		    X_OUTDATA<-1> = "D":File[1, LEN(File) - 1]
+		END ELSE
+		    X_OUTDATA<-1> = "F":File
+		END
+	    END
+	NEXT
+
+    END ELSE                           ; * NT
+
+	* First use the list of directories. This is already in the
+	* variable "X_OUT".
+
+	Dc = DCOUNT(X_OUT,@FM)
+	FOR I = 1 TO Dc
+	    IF X_OUT<I> <> "" THEN
+		X_OUTDATA<-1> = "D":TRIM(X_OUT<I>)
+	    END
+	NEXT
+
+	* Now get the list of files, excluding hidden files, and system file
+	ShCmd = 'dir /B/A-D-H-S ':BrowsePath
+	GOSUB ShellCmd
+
+	CheckString = "File Not Found"
+	IF X_OUT[1, LEN(CheckString)] # CheckString THEN
+	    Dc = DCOUNT(X_OUT, @FM)
+	    FOR I = 1 TO Dc
+		IF X_OUT<I> <> "" THEN
+		    X_OUTDATA<-1> = "F":TRIM(X_OUT<I>)
+		END
+	    NEXT
+	END
+    END
+
+RETURN
+
+************************************************************************
+*
+*  OS File operations: ReadOSFile, WriteOSFile, WriteOSFileForce
+*		       CopyFile, CopyFileForce
+*
+************************************************************************
+
+ReadOSFile: 
+    Path     = TRIM(X_PARAMS<1>)
+    FileName = TRIM(X_PARAMS<2>)
+
+    Path = CHANGE(Path, OS.SEP:OS.SEP, OS.SEP)
+    OPENSEQ Path:OS.SEP:FileName  TO OSFILE ON ERROR
+	X_ERROR = ETOOL.OPENFAIL
+ 	X_OUTDATA = "Failed to open file '":Path:OS.SEP:FileName:"'"
+	RETURN
+    END LOCKED 
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+ 	X_OUTDATA = "Failed to apply lock on file '":Path:OS.SEP:FileName:"'"
+	RETURN
+    END ELSE
+	X_ERROR = ETOOL.OPENFAIL
+ 	X_OUTDATA = "Failed to open file '":Path:OS.SEP:FileName:"'"
+	RETURN
+    END 
+
+    notend = 1
+    X_OUTDATA = ""
+    LOOP
+	READSEQ Rec FROM OSFILE ELSE
+	   IF STATUS() = 1 THEN
+                notend = 0
+	   END ELSE
+		X_ERROR = ETOOL.OPENFAIL
+		X_OUTDATA = "Failed to read file '":Path:OS.SEP:FileName:"'"
+		RETURN
+	   END
+	END
+    WHILE notend DO
+	X_OUTDATA = X_OUTDATA:Rec:CHAR(10)
+    REPEAT
+
+    X_OUTDATA = X_OUTDATA[1, len(X_OUTDATA)-1]
+
+RETURN
+
+
+WriteOSFile:
+    Path     = TRIM(X_PARAMS<1>)
+    FileName = TRIM(X_PARAMS<2>)
+    Rec      = TRIM(X_PARAMS<3>)
+
+    Path = CHANGE(Path, OS.SEP:OS.SEP, OS.SEP)
+
+    * For UniVerse
+    OPENSEQ Path:OS.SEP:FileName TO F1 ON ERROR
+    END LOCKED
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+ 	X_OUTDATA = "Failed to apply lock on file '":Path:OS.SEP:FileName:"'"
+	RETURN
+    END THEN
+	* File is existed     
+	X_ERROR = ETOOL.FILEEXIST
+	X_OUTDATA = "File '":Path:OS.SEP:FileName:"' already exists"
+	CLOSESEQ F1
+	RETURN
+    END ELSE
+	* Create the new file
+	CREATE F1 ELSE GOTO errout:
+	WRITESEQ Rec TO F1 ON ERROR GOTO errout ELSE GOTO errout
+	WEOFSEQ F1 ON ERROR GOTO errout
+	CLOSESEQ F1 ON ERROR GOTO errout
+	RETURN
+    END
+
+errout:
+    X_ERROR = ETOOL.WRITEFAIL
+    X_OUTDATA = "Failed to write to file '":Path:OS.SEP:FileName:"'"
+
+* UniData version
+*    OSOPEN Path:OS.SEP:FileName TO F1 THEN
+*	* File is existed
+*	X_ERROR = ETOOL.FILEEXIST
+* 	X_OUTDATA = "File ":FileName:" is existed"
+*	OSCLOSE F1
+*    END ELSE
+*	OSWRITE Rec TO Path:OS.SEP:FileName ON ERROR
+*	    X_ERROR = ETOOL.WRITEFAIL
+* 	    X_OUTDATA = "Failed to write to file ":FileName
+*	END
+*    END
+
+RETURN
+
+WriteOSFileForce:
+    Path     = TRIM(X_PARAMS<1>)
+    FileName = TRIM(X_PARAMS<2>)
+    Rec      = TRIM(X_PARAMS<3>)
+
+    Path = CHANGE(Path, OS.SEP:OS.SEP, OS.SEP)
+
+    * For UniVerse
+    OPENSEQ Path:OS.SEP:FileName TO F1 ON ERROR 
+	GOTO errout1 
+    END LOCKED
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+ 	X_OUTDATA = "Failed to apply lock on file '":Path:OS.SEP:FileName:"'"
+	RETURN
+    END ELSE
+	CREATE F1 ELSE GOTO errout1:
+    END
+
+    * Create the new file
+    WRITESEQ Rec TO F1 ON ERROR GOTO errout1 ELSE GOTO errout1
+    WEOFSEQ F1 ON ERROR GOTO errout1
+    CLOSESEQ F1 ON ERROR GOTO errout1
+    RETURN
+
+errout1:
+    X_ERROR = ETOOL.WRITEFAIL
+    X_OUTDATA = "Failed to write to file '":Path:OS.SEP:FileName:"'"
+
+* UniData version
+*    OSWRITE Rec TO Path:OS.SEP:FileName ON ERROR
+*	X_ERROR = ETOOL.WRITEFAIL
+* 	X_OUTDATA = "Failed to write to file ":FileName
+*    END
+
+RETURN
+
+CopyOSFile:
+    SPath    = TRIM(X_PARAMS<1>)
+    TPath    = TRIM(X_PARAMS<2>)
+    FileName = TRIM(X_PARAMS<3>)
+
+    SPath = CHANGE(SPath, OS.SEP:OS.SEP, OS.SEP)
+    TPath = CHANGE(TPath, OS.SEP:OS.SEP, OS.SEP)
+
+    OPENSEQ TPath:OS.SEP:FileName TO F1 ON ERROR
+    END LOCKED
+        X_ERROR = ETOOL.OPT_LOCKFAIL
+ 	X_OUTDATA = "Failed to apply lock on file '":FileName:"'"
+    END THEN
+	* File is existed
+	X_ERROR = ETOOL.FILEEXIST
+	X_OUTDATA = "File ":FileName:" is existed"
+	CLOSESEQ F1 ON ERROR GOTO errout1
+
+    END ELSE
+	IF OS.TYPE = "UNIX" THEN
+*	    ShCmd = "SH -c 'cp ":SPath:'/':FileName:' ':TPath:"'"
+*	    EXECUTE ShCmd
+	    ShCmd = 'cp ':SPath:'/':FileName:' ':TPath
+	    GOSUB ShellCmd
+	END ELSE
+*	    ShCmd = "DOS /c 'copy /Y ":SPath:'\':FileName:' ':TPath:"'"
+*	    EXECUTE ShCmd
+	    ShCmd = "copy /Y ":SPath:'\':FileName:' ':TPath
+	    GOSUB ShellCmd
+	END
+    END
+RETURN
+
+CopyOSFileForce:
+    SPath    = TRIM(X_PARAMS<1>)
+    TPath    = TRIM(X_PARAMS<2>)
+    FileName = TRIM(X_PARAMS<3>)
+
+    CNT = COUNT(FileName, @VM)
+    FOR I = 1 TO CNT+1
+	IF OS.TYPE = "UNIX" THEN
+	    ShCmd = "cp ":SPath:'/':FileName<1,I>:' ':TPath
+	    GOSUB ShellCmd
+*           ShCmd = "SH -c 'cp ":SPath:'/':FileName<1,I>:' ':TPath
+*	    EXECUTE ShCmd
+	END ELSE
+	    ShCmd = "copy /Y ":SPath:'\':FileName<1,I>:' ':TPath
+	    GOSUB ShellCmd
+*	    ShCmd = "DOS /c 'copy /Y ":SPath:'\':FileName<1, I>:' ':TPath:"'"
+*	    EXECUTE ShCmd
+	END
+    NEXT
+RETURN
+
+
+************************************************************************
+*
+*  Test if VOC is there
+*
+************************************************************************
+TestVOC:
+       OPENPATH AcctPath:OS.SEP:'VOC' TO tmpFile ON ERROR
+	    VOCFLAG = 0
+       END THEN
+	    VOCFLAG = 1
+            CLOSE tmpFile
+       END ELSE
+	    VOCFLAG = 0
+       END
+
+*    IF OS.TYPE = "UNIX" THEN
+*	ShCmd = "ls ":AcctPath:"/VOC"
+*	GOSUB ShellCmd
+*       IF INDEX(X_OUT,"No such file or directory",1) THEN 
+*          VOCFLAG = 0
+*       END ELSE
+*          VOCFLAG = 1
+*       END
+*    END ELSE 
+*	ShCmd = "dir ":AcctPath:"\VOC"
+*	CheckString = "The system cannot find the "
+*       CheckString2 = "File Not Found"
+*       GOSUB ShellCmd
+*	IF X_OUT[1, LEN(CheckString)] = CheckString OR INDEX(X_OUT,CheckString2,1) THEN
+*	    VOCFLAG = 0
+*	END ELSE
+*	    VOCFLAG = 1
+*	END
+*    END
+
+*    IF OS.TYPE = "UNIX" THEN
+*        VOC_FILE = AcctPath:"/VOC"
+*    END ELSE 
+*	VOC_FILE = AcctPath:"\VOC"
+*    END
+*    VOC_FILESTAT = DIR(VOC_FILE)
+*    IF LEN(VOC_FILESTAT) = 0 THEN
+*	VOCFLAG = 0
+*    END ELSE
+*	VOCFLAG = 1
+*    END
+
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to get all the files under &XML& directory
+*
+***********************************************************************
+GetXMLFiles:
+
+*   * 34257 The &XML& file doesn't seem to be open or found so let's assign it
+*    OPEN "&XML&" TO FXMLDIR ELSE
+*	    X_ERROR = ETOOL.XMLDIROPENFAIL
+*	    X_OUTDATA = "Failed to open &XML& under ":ACCT_NAME
+*      RETURN
+*    END
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    SELECT FXMLDIR
+    DONE = FALSE
+    LOOP 
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	LENs = LEN(ID)
+	PICKED = 1
+	IF LENs > 4 THEN
+      * 34257 Fix appendix to just grab the last 4 characters
+*	    appendix = UPCASE(ID[LENs-3, LENs])
+	    appendix = UPCASE(ID[4])
+	    IF appendix = ".MAP" OR appendix = ".DTD" OR appendix = ".XSD" THEN
+		PICKED = 0
+           END
+	END
+
+	IF PICKED THEN
+	    X_OUTDATA<-1> = ID
+	END
+    REPEAT
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get the mapinfo from the intermediate file
+*     input: id
+*
+***********************************************************************
+ReadXMLFile:
+    XID = TRIM(X_PARAMS)
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    READ Recs FROM FXMLDIR, XID ELSE
+    	X_ERROR = ETOOL.NOXMAPREC
+	X_OUTDATA = "Failed to read XMAP file ":XID:" form &XML& directory"
+    	RETURN
+    END
+    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+RETURN
+
+***********************************************************************
+*
+* Subroutine to check if the name of intermediate file already there
+*     input: id
+*
+***********************************************************************
+CheckXMLFile:
+    XID = TRIM(X_PARAMS)
+
+    GOSUB OpenXMLDir
+    IF X_ERROR <> 0 THEN RETURN
+
+    READ Recs FROM FXMLDIR, XID THEN
+	X_OUTDATA = 1
+    END ELSE
+    	X_OUTDATA = 0
+    END
+RETURN
+
+************************************************************************
+*
+*  Check if the "id" is in the file, and make a name which is not in VOC
+*
+************************************************************************
+CheckID:
+    FileName = TRIM(X_PARAMS<1>)
+    O_ID     = TRIM(X_PARAMS<2>)
+    XNAME    = TRIM(X_PARAMS<3>)
+
+    X_OUTDATA = 0
+    OPEN "", FileName TO F1 ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	RETURN
+    END
+
+    DONE = FALSE
+    CNT = 0
+    XID = O_ID
+    LOOP
+	READ Rec FROM F1, XID:XNAME ELSE DONE = TRUE
+    UNTIL DONE DO
+	CNT = CNT + 1
+	IF XNAME <> "" THEN
+	    XID = O_ID:CNT
+	END ELSE
+	    XID = O_ID:'_':CNT
+	END
+    REPEAT
+
+    X_OUTDATA = XID:XNAME
+    CLOSE F1
+RETURN
+
+************************************************************************
+*
+*  DO the ICONV and OCONV
+*
+************************************************************************
+Iconv:
+    IDATA = TRIM(X_PARAMS<1>)
+    CONVCODE = TRIM(X_PARAMS<2>)
+
+    data1 = ICONV(IDATA, CONVCODE)
+    X_ERROR = STATUS()
+    IF X_ERROR THEN
+	RETURN
+    END
+
+    X_OUTDATA = data1:@FM:OCONV(data1, CONVCODE)
+    X_ERROR = STATUS()
+RETURN
+
+Oconv:
+    IDATA = TRIM(X_PARAMS<1>)
+    CONVCODE = TRIM(X_PARAMS<2>)
+
+    X_OUTDATA = OCONV(IDATA, CONVCODE)
+    X_ERROR = STATUS()
+RETURN
+
+*******************************************************
+* Get Cataloged files 
+*******************************************************
+GetCTLGFiles:
+    CTLGFlag = TRIM(X_PARAMS)
+
+    IF CTLGFlag = 0 THEN
+* 34257 Fix SSELECT so that it finds all BASIC verbs
+*	ExLine  = "SSELECT VOC WITH F3 = 'B' "
+  ExLine  = 'SSELECT VOC WITH TYPE = "V" "v" AND WITH F3 = "B" "b"'
+	GOSUB GetCTLGs
+	RETURN
+    END
+
+
+    * Get Global catalogs
+    
+    ExLine = "MAP"
+    GOSUB ExecWithCapture
+    NO.LINES = DCOUNT(X_OUT,@FM)
+    FOR X = 1 TO NO.LINES
+	LINE = X_OUT<X>
+	IF INDEX(LINE,"Catalog Name",1) THEN CONTINUE
+	CATNAME = FIELD(LINE," ",1)
+	X_OUTDATA<-1> = CATNAME
+    NEXT X
+    RETURN
+
+
+    * following code for Global Catalog programs is replaced by the above code.
+    * We don't want to create temp entry in VOC.
+
+    XFile = "GCTLG"
+
+    OPEN "","VOC" TO FVOC ELSE
+	X_OUTDATA = "Open VOC failed. The VOC might not be accessible."
+	X_ERROR = ETOOL.OPENFAIL
+	RETURN
+    END
+
+    CNT = 1
+    DONE = FALSE
+    XID = XFile
+    LOOP
+	READU Rec FROM FVOC, XID ELSE DONE = TRUE
+    UNTIL DONE DO
+	RELEASE FVOC, XID
+	CNT = CNT + 1
+	XID = XFile:'_':CNT
+    REPEAT
+
+    FP = "F":@FM:UDHOME:"/catdir":@FM:UDHOME:"/D_catdir"
+    WRITE FP TO FVOC, XID ON ERROR
+	    X_ERROR = ETOOL.WRITEFAIL
+	    X_OUTDATA="The VOC might not be writable."
+	    CLOSE FVOC
+	    PERFORM "DELETE VOC ":XID
+	    RETURN
+    END
+    ExLine  = "SSELECT ":XID
+    GOSUB GetCTLGs
+
+    RELEASE FVOC, XID
+    CLOSE FVOC
+    PERFORM "DELETE VOC ":XID
+RETURN
+
+GetCTLGs:
+    GOSUB ExecECL
+
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	X_OUTDATA<-1> = ID
+    REPEAT
+RETURN
+
+*******************************************************
+* Get Cataloged files 
+*******************************************************
+GetParas:
+    CTLGFlag = TRIM(X_PARAMS<1>)
+    ProgName = TRIM(X_PARAMS<2>)
+
+*    IF CTLGFlag = 0 THEN
+*	CTLGName = 'CTLG\':ProgName
+*    END ELSE 
+*    	CTLGName = UDHOME:"\sys\CTLG\":DOWNCASE(ProgName[1,1]):"\":ProgName
+*    END
+
+*    nargs = OBJINFO(CTLGName)
+
+    nargs = -1	; * Always set to -1, will change to real one later.
+
+*    IF nargs < -1 THEN
+*	X_ERROR = ETOOL.READFAIL
+*	RETURN
+*    END
+    X_OUTDATA = nargs:@FM
+RETURN
+
+*******************************************************
+* try to locate source program for catalogged code
+* Input: flag(0: local, 1: global) @FM ProgName
+* Output: filename(DIR) @VM progname @FM filename(DIR) @VM prognam ...
+*******************************************************
+LocateCTLGSource:
+    CTLGFlag = TRIM(X_PARAMS<1>)
+    ProgName = TRIM(X_PARAMS<2>)
+
+    OPEN "","VOC" TO FVOC ELSE
+        X_ERROR = ETOOL.OPENFAIL
+        X_OUTDATA = 'Failed to open VOC file'
+        RETURN
+    END
+    IF CTLGFlag = 0 THEN
+	* local catalog
+	READ rec FROM FVOC, ProgName THEN
+	    IF rec<2>[1,1] = '*' THEN
+		* normal catalog
+		ProgName = FIELD(rec<2>[2, LEN(rec<2>)-1], '*', 2)	
+		GOSUB SearchProgramName
+	    END ELSE
+		* local catalog
+		IF rec<9>[2] = '.O' THEN X_OUTDATA = rec<9>[1, LEN(rec<9>)-2] ELSE X_OUTDATA=rec<9>
+	    END
+	END ELSE
+		X_ERROR = ETOOL.READFAIL
+		X_OUTDATA = 'Failed to find VOC file entry for ':ProgName
+	END
+    END ELSE
+	* normal or global catalog
+	* UV can't determine the source code location of globally catalogged program
+	* BDT should handle that
+	GOSUB SearchProgramName
+    END
+RETURN
+
+* search ProgName in all DIR files in this account
+SearchProgramName:
+    ExLine = "SSELECT VOC WITH (F1 LIKE F... OR F1 LIKE f...)"
+
+    GOSUB ExecECL
+
+    DONE = FALSE
+    LOOP
+        READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+       IF ID = "XToolPtr"            THEN CONTINUE
+       IF ID[1,1] = '&'              THEN CONTINUE
+       IF ID[2] = '.O'               THEN CONTINUE
+
+	READ Rec FROM FVOC, ID THEN
+	    IF Rec<4>="M" THEN	;* MultiDir
+		subIDX=1
+		LOOP
+		    subID = FIELD(Rec<7>, @VM, subIDX)
+		    subIDX = subIDX+1
+		UNTIL subID="" DO
+		    OPENSEQ ID:",":subID, ProgName TO FileDIR ON ERROR
+		    END LOCKED
+		    END THEN
+                        X_OUTDATA<-1> = ID:",":subID
+		    END
+		REPEAT
+	    END ELSE
+	      OPEN ID TO tmpfile THEN
+		IF FILEINFO(tmpfile, 3) = 4 THEN
+		    * yes, this is a DIR
+		    OPENSEQ ID, ProgName TO FileDIR ON ERROR
+		    END LOCKED
+		    END THEN
+			IF ID[2] = '.O' THEN X_OUTDATA<-1> = ID[1, LEN(ID)-2] ELSE X_OUTDATA<-1>=ID
+		    END
+		END
+		CLOSE tmpfile
+	      END
+	    END
+	END ELSE
+		* continue
+	END
+    REPEAT
+RETURN
+***********************************************************************
+*
+* Subroutine to get the mapinfo from the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+GetBPFiles:
+    SELECT FBPDIR
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	IF LEN(ID) > 1 THEN
+	    prefix = ID[0, 1]
+	    IF prefix <> "_" THEN
+		X_OUTDATA<-1> = ID
+	    END
+	END
+    REPEAT
+*X_OUTDATA="Some files"
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get the mapinfo from the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+ReadBPFile:
+    XID = TRIM(X_PARAMS)
+    READ Recs FROM FBPDIR, XID ELSE
+    	X_ERROR = ETOOL.NOXMAPREC
+	X_OUTDATA = "Failed to read BP file ":XID:" from BP directory"
+    	RETURN
+    END
+    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+RETURN
+
+***********************************************************************
+*
+* Subroutine to write the mapinfo into the intermediate file
+*     input: id, overwrite
+*
+***********************************************************************
+WriteBPFile:
+    XID = TRIM(X_PARAMS<1>)
+    map = FIELD(X_PARAMS, @FM, 2, COUNT(X_PARAMS, @FM)+1)
+
+    WRITE map TO FBPDIR, XID ON ERROR
+    	X_ERROR = ETOOL.XMAPWRITEFAIL
+	X_OUTDATA = "Failed to write BP file ":XID:" to BP diretory"
+	RETURN
+    END
+    
+RETURN
+
+
+
+***********************************************************************
+*
+* Subroutine to get the Basic program file list from the DIR file
+*     input: acct, DIR file name
+*
+***********************************************************************
+GetDIRRecordList:
+    acctName = TRIM(X_PARAMS<1>)
+    dirName = TRIM(X_PARAMS<2>)
+
+    OPEN dirName TO FileDIR ELSE
+	    X_ERROR = ETOOL.XMLDIROPENFAIL
+	    X_OUTDATA = "Failed to open ":dirName:" under ":acctName
+	    RETURN
+    END
+
+    SELECT FileDIR
+    DONE = FALSE
+    LOOP
+	READNEXT ID ELSE DONE = TRUE
+    UNTIL DONE DO
+	IF LEN(ID) > 1 THEN
+	    X_OUTDATA<-1> = ID
+	END
+    REPEAT
+
+    CLOSE FileDIR
+RETURN
+
+***********************************************************************
+*
+* Subroutine to get the content of a Basic program from the DIR file
+*     input: acct, DIR file, program name
+*
+***********************************************************************
+ReadDIRRecord:
+    acctName = TRIM(X_PARAMS<1>)
+    dirName = TRIM(X_PARAMS<2>)
+    XID = TRIM(X_PARAMS<3>)
+
+*    OPEN dirName TO FileDIR ELSE
+*	    X_ERROR = ETOOL.XMLDIROPENFAIL
+*	    X_OUTDATA = "Failed to open ":dirName:" under ":acctName
+*	    RETURN
+*    END
+*
+*
+*    READ Recs FROM FileDIR, XID ELSE
+*    	X_ERROR = ETOOL.NOXMAPREC
+*	X_OUTDATA = "Failed to read program file ":XID:" from ":dirName
+*	CLOSE FileDIR
+*    	RETURN
+*    END
+*
+*    CLOSE FileDIR
+*
+*    X_OUTDATA = CHANGE(Recs, @FM, CHAR(10))
+
+    IS_FIRSTLINE=TRUE
+    OPENSEQ dirName, XID TO XID_FILEID ON ERROR
+	X_ERROR = ETOOL.NOXMAPREC
+	X_OUTDATA = "Failed to read program file ":XID:" from ":dirName
+    END LOCKED 
+	X_ERROR = ETOOL.OPT_LOCKFAIL
+	X_OUTDATA = "Failed to apply lock on file ":XID:" from ":dirName
+    END THEN
+        DONE=FALSE
+        LOOP
+                READSEQ ONE_LINEDATA FROM XID_FILEID ELSE DONE=TRUE
+        UNTIL DONE DO
+		IF IS_FIRSTLINE = TRUE THEN
+                    X_OUTDATA = ONE_LINEDATA
+		    IS_FIRSTLINE = FALSE
+		END ELSE 
+                    X_OUTDATA = X_OUTDATA:CHAR(10):ONE_LINEDATA
+	 	END
+        REPEAT
+	CLOSESEQ XID_FILEID
+    END ELSE
+	X_ERROR = ETOOL.NOXMAPREC
+	X_OUTDATA = "Failed to read program file ":XID:" from ":dirName
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Read BP program
+*     input: acct, DIR file, program name
+*
+***********************************************************************
+getDIRRecordPath:
+    * check if the DIR file is a MDIR
+    LOC = INDEX(dirName, ",", 1)
+    
+    IF LOC > 0 THEN
+	* yes, a MDIR
+	DIR_VOCNAME=dirName[1, LOC-1]
+	DIR_SUBNAME=dirName[LOC+1, LEN(dirName)-LOC]
+    END ELSE
+	DIR_VOCNAME=dirName
+	DIR_SUBNAME=""
+    END
+
+    OPEN "","VOC" TO FVOC ELSE
+	X_ERROR = ETOOL.OPENFAIL
+	X_OUTDATA = 'Failed to open VOC file' ;* E34302
+	RETURN
+    END
+
+    READ FILEPATH FROM FVOC, DIR_VOCNAME ELSE
+	X_ERROR = ETOOL.XMLDIROPENFAIL
+	X_OUTDATA = "Failed to open ":dirName:" under ":acctName
+	CLOSE FVOC
+	RETURN
+    END
+
+    CLOSE FVOC
+    PATHNAME=FILEPATH<2>
+    FINDSTR OS.SEP IN PATHNAME SETTING Fno THEN
+	* the dir file path has / or \ in it
+	* let's check if it's full path
+
+	GOSUB IsFullPath
+	IF IS.ABSOLUTE THEN
+	    DIR_FILEPATH=PATHNAME
+	END ELSE
+	    READ Rec FROM UDACCOUNT, acctName ELSE 
+		X_ERROR = ETOOL.WRONGACCTID
+		X_OUTDATA = "Invalid account name ":ACCT_ID
+		RETURN
+	    END
+	    DIR_FILEPATH = Rec<1>:OS.SEP:PATHNAME
+	END
+
+    END ELSE 
+	DIR_FILEPATH=DIR_VOCNAME
+    END
+
+    IF DIR_SUBNAME <> "" THEN
+    	DIR_FILEPATH=DIR_FILEPATH:OS.SEP:DIR_SUBNAME
+    END
+
+    XID_FILEPATH=DIR_FILEPATH:OS.SEP:XID
+
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to write the content of a Basic program into the DIR file
+*     input: file path
+*
+***********************************************************************
+IsFullPath:
+
+    IF OS.TYPE = "UNIX"
+    THEN
+	IS.ABSOLUTE = (PATHNAME[1,1] = OS.SEP)
+    END
+    ELSE
+	IS.ABSOLUTE = (PATHNAME[1,1] = OS.SEP) OR (PATHNAME[1,2] = OS.SEP:OS.SEP) OR (LEN(PATHNAME)>3 AND (PATHNAME[2,1] = ":") AND PATHNAME[3,1] = OS.SEP)
+    END
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to write the content of a Basic program into the DIR file
+*     input: acct, DIR file, program name, program content
+*
+***********************************************************************
+WriteDIRRecord:
+    acctName = TRIM(X_PARAMS<1>)
+    dirName = TRIM(X_PARAMS<2>)
+    XID = TRIM(X_PARAMS<3>)
+    DAT_NEW = FIELD(X_PARAMS, @FM, 4, COUNT(X_PARAMS, @FM)+3)
+
+    FORCE_FLAG=1
+
+    LOCATE ETOOL.SIG_ORIG_DATA IN DAT_NEW SETTING DAT_ORIG_NO THEN
+	DAT_ORIG = FIELD(DAT_NEW, @FM, DAT_ORIG_NO+1,  COUNT(DAT_NEW, @FM))
+	DAT_NEW = FIELD(DAT_NEW, @FM, 1, DAT_ORIG_NO-1)
+	LOCATE ETOOL.SIG_FORCE_FLAG IN DAT_ORIG SETTING FORCE_FLG_NO THEN
+	    FORCE_FLAG= FIELD(DAT_ORIG, @FM, FORCE_FLG_NO+1, COUNT(DAT_ORIG, @FM))
+	    DAT_ORIG=FIELD(DAT_ORIG, @FM, 1, FORCE_FLG_NO-1)
+	END ELSE
+	    FORCE_FLAG=0
+	END
+    END ELSE
+	DAT_ORIG_NO = -1
+    END
+
+    OPENSEQ dirName, XID TO XID_FILEID ON ERROR
+	X_ERROR = ETOOL.NOXMAPREC
+	X_OUTDATA = "Failed to write program file ":XID:" to ":dirName
+    END LOCKED 
+	X_ERROR = ETOOL.OPT_LOCKFAIL
+	X_OUTDATA = "Failed to apply lock on file ":XID:" from ":dirName
+    END THEN
+    END ELSE
+	CREATE XID_FILEID ELSE 
+	    X_ERROR = ETOOL.NOXMAPREC
+	    X_OUTDATA = "Failed to write program file ":XID:" to ":dirName
+	END
+    END
+
+    IF X_ERROR <> 0 THEN RETURN
+
+    IF DAT_ORIG_NO > 0 AND FORCE_FLAG=0 THEN
+	* let's do optimistic locking
+	*
+	DATA_NOW=""
+        DONE=FALSE
+	IS_FIRSTLINE = TRUE
+	OPENSEQ dirName, XID TO TMP_XID_FILEID THEN
+            LOOP
+                READSEQ ONE_LINEDATA FROM TMP_XID_FILEID ELSE DONE=TRUE
+            UNTIL DONE DO
+		IF IS_FIRSTLINE = TRUE THEN
+                    DATA_NOW = ONE_LINEDATA
+		    IS_FIRSTLINE = FALSE
+		END ELSE 
+                    DATA_NOW = DATA_NOW:CHAR(10):ONE_LINEDATA
+	 	END
+            REPEAT
+	    CLOSESEQ TMP_XID_FILEID
+	END
+
+	IF DAT_ORIG <> DATA_NOW THEN
+    	    X_ERROR = ETOOL.OPT_DATACHANGED
+	    X_OUTDATA = "The program file ":XID:" from ":dirName:" has been changed."
+	    *X_OUTDATA = DATA_NOW
+	    CLOSESEQ XID_FILEID
+    	    RETURN
+	END
+    END
+
+    WEOFSEQ  XID_FILEID ON ERROR
+	X_ERROR = ETOOL.XMAPWRITEFAIL
+	X_OUTDATA = "Failed to write program file ":XID:" to ":dirName
+    END
+
+    WRITESEQF DAT_NEW TO XID_FILEID ON ERROR
+	X_ERROR = ETOOL.XMAPWRITEFAIL
+	X_OUTDATA = "Failed to write program file ":XID:" to ":dirName
+    END ELSE
+	X_ERROR = ETOOL.XMAPWRITEFAIL
+	X_OUTDATA = "Failed to write program file ":XID:" to ":dirName
+    END
+
+    CLOSESEQ XID_FILEID
+RETURN
+
+***********************************************************************
+*
+* Subroutine to compile a Basic program in the DIR file
+*     input: acct, DIR file, program name
+*
+***********************************************************************
+CompileDIRRecord:
+    acctName = TRIM(X_PARAMS<1>)
+    dirName = TRIM(X_PARAMS<2>)
+    XID = TRIM(X_PARAMS<3>)
+    COMPILE_OPTS = TRIM(X_PARAMS<4>)
+
+    ExLine = "BASIC ":dirName:" ":XID:" ":COMPILE_OPTS
+    GOSUB ExecWithCapture
+
+    X_OUTDATA = CHANGE(X_OUT, @FM, CHAR(10))
+
+RETURN
+
+
+***********************************************************************
+*
+* Subroutine to catalog a Basic program in the DIR file
+*     input: acct, DIR file, program name
+*
+***********************************************************************
+CatalogDIRRecord:
+    acctName = TRIM(X_PARAMS<1>)
+    dirName = TRIM(X_PARAMS<2>)
+    XID = TRIM(X_PARAMS<3>)
+    COMPILE_OPTS = TRIM(X_PARAMS<4>)
+    CATALOG_OPTS = TRIM(X_PARAMS<5>)
+
+    ExLine = "BASIC ":dirName:" ":XID:" ":COMPILE_OPTS
+    GOSUB ExecWithCapture
+    X_OUTDATA = CHANGE(X_OUT, @FM, CHAR(10))
+
+    IF INDEX(X_OUTDATA, "Compilation Complete", 1) <= 0 THEN
+	RETURN
+    END 
+
+    CATMODE=FIELD(CATALOG_OPTS, ' ', 1)
+
+    ExLine=""
+    IF CATMODE = 'LOCAL' THEN
+	ExLine = "CATALOG ":dirName:" ":XID:" ":CATALOG_OPTS
+    END ELSE IF CATMODE = 'NORMAL' THEN
+	ExLine = "CATALOG ":dirName:" ":XID:" ":FIELD(CATALOG_OPTS, ' ', 2, 99)
+    END ELSE
+	CATNAME=FIELD(CATALOG_OPTS, ' ', 2, 1)
+	ExLine = "CATALOG ":dirName:" ":CATNAME:" ":XID:" ":FIELD(CATALOG_OPTS, ' ', 3, 99)
+    END 
+    
+    GOSUB ExecWithCapture
+    X_OUTDATA = X_OUTDATA:CHAR(10):CHANGE(X_OUT, @FM, CHAR(10))
+
+RETURN
+
+***********************************************************************
+*
+* Subroutine to list current users
+*     input: none	(should run in an account with PORT.STATUS, ideally in UV)
+*     Output: interactive users @FM background users
+*	      Interactive user data:
+*		Pid, User name, Who, Port, Login time, Last command
+* 	      Background process data:
+*		Pid, User name, Printer segment, Last command (unix)
+*	        Or
+*		Pid, User name, Port, Printer segment, Last command (NT)
+*
+***********************************************************************
+ListUsers:
+*    HUSH OFF SETTING OLD.HUSH
+*    CALL !GET.USERS(UV.USERS,MAX.USERS,SYS.USERS,USER.INFO,CODE)
+*    X_OUTDATA = USER.INFO
+*    X_ERROR = CODE
+*    HUSH OLD.HUSH
+
+      Interactive = ""
+      Background = ""
+
+      ExLine = "PORT.STATUS INTERNAL"
+      GOSUB ExecWithCapture
+
+* PORT.STATUS can only be used by one person at a time
+
+      IF index(X_OUT,"PORT.STATUS is currently being run",1) THEN
+	X_ERROR= ETOOL.OPENFAIL
+         X_OUTDATA="PORT.STATUS is currently being run"
+	RETURN
+      End
+
+* First line of output contains user counts
+
+      NumTotal = X_OUT<1,1>
+      NumInteractive = X_OUT<1,2>
+      NumBackground = X_OUT<1,3>
+
+      If OS.TYPE # "UNIX" Then
+	NumBackground = NumTotal - NumInteractive
+      End
+
+      IntStart = 2                       ; * Start line for interactive users
+      BckStart = IntStart + NumInteractive
+
+* Interactive users first
+
+      If NumInteractive > 0 Then
+         For IntIndex = IntStart To IntStart + NumInteractive - 1
+            Line = Trim(X_OUT<IntIndex>)
+
+            **************************
+            * OS specific code start *
+            **************************
+
+            If OS.TYPE # "UNIX" Then
+
+               * PORT.STATUS does not display 'Who' (ie. user number) on
+               * NT. It is the same as the Pid, so insert it in the line
+
+               Ins Trim(X_OUT<IntIndex, 1>) Before Line<1, 3>
+
+            End
+
+            ************************
+            * OS specific code end *
+            ************************
+
+            * Insert a blank value into the line for Last Logged In time.
+            * This will be filled in by cross-referencing to LISTU output
+
+            Ins "" Before Line<1,5>
+            Interactive<-1> = Line
+         Next IntIndex
+      End
+
+* Now do background users
+
+      If NumBackground > 0 Then
+         For BckIndex = BckStart To BckStart + NumBackground - 1
+            Line = Trim(X_OUT<BckIndex>)
+
+            **************************
+            * OS specific code start *
+            **************************
+
+            If OS.TYPE # "UNIX" Then
+
+               * We can show the user number for phantoms on NT, do this
+               * so that background processes can be logged off using MASTER
+
+               Ins Trim(X_OUT<BckIndex, 1>) Before Line<1, 3>
+
+            End
+
+            ************************
+            * OS specific code end *
+            ************************
+
+            Background<-1> = Line
+         Next BckIndex
+      End
+
+      ExLine = "LISTU"
+      Gosub ExecWithCapture
+      Text = X_OUT
+      Dc = Dcount(Text,@fm)
+      Dc2 = Dcount(Interactive,@fm)
+
+**************************
+* OS specific code start *
+**************************
+
+      If OS.TYPE = "UNIX" Then
+
+         * Use tty to cross-reference output from LISTU to get login times
+         * for interactive users. Extract login date/time by trimming to
+         * get rid of excess spaces and extracting the 3rd, 4th & 5th items
+         * to try and avoid problems with different formats of this output
+         * (eg. IBM outputs extra data after the date time)
+
+         For I = 1 To Dc2
+            Tty = Trim(Interactive<I,4>)
+            For J = 1 to Dc
+               Line = Trim(Text<J>)
+               UnixTTY = Line[" ",2,1]
+               TTYPaths = Count(UnixTTY,"/")
+               If Tty["/",Dcount(Tty,"/") - TTYPaths,TTYPaths+1] = UnixTTY Then
+                  Line = Trim(Line)
+                  Interactive<I,5> = Trim(Line[" ", 3, 3])
+               End
+            Next J
+         Next I
+      End Else
+
+         * Use Pid to cross-reference output from LISTU to get login times
+         * and portname for interactive users - this is more
+         * reliable for portname than PORT.STATUS as the latter gives
+         * "Unavailable" for the current process. Because user names
+         * can have spaces in them, access the portname and date/time
+         * from the end of the line
+
+         For I = 1 To Dc2
+            Pid = Trim(Interactive<I,1>)
+            For J = 1 To Dc
+               Line = Text<J>
+               UserNo = Trim(Line[14,7])
+               If UserNo = Pid Then
+                  Line = Trim(Line)
+                  NumSp = Count(Line, " ")
+                  Interactive<I,4> = Trim(Line[" ", NumSp - 2, 1])
+                  Interactive<I,5> = Trim(Line[" ", NumSp - 1, 3])
+               End
+            Next J
+         Next I
+      End
+
+************************
+* OS specific code end *
+************************
+
+      X_OUTDATA = Lower(Interactive) : @fm : Lower(Background)
+RETURN
+
+
+GetMultiDIRRecordList:
+RETURN
+
+************************************************************************
+
+************************************************************************
+*
+*  Execute an ECL command, put the result into LIST 0
+*
+************************************************************************
+ExecECL:
+    HUSH ON SETTING pre_status
+    EXECUTE ExLine
+    HUSH pre_status
+RETURN
+    
+    
+ExecWithCapture:
+    HUSH OFF SETTING pre_status
+    EXECUTE ExLine CAPTURING X_OUT
+    HUSH pre_status
+RETURN
+
+************************************************************************
+*
+*  get the current account flavor
+*
+************************************************************************
+GetAccountFlavor:
+
+    acctName = TRIM(X_PARAMS<1>)
+    ACCTYPE = 0
+    OPEN "","VOC" TO tmpvoc ELSE ACCTYPE = 1
+    READ tmprec FROM tmpvoc, "RELLEVEL" ELSE ACCTYPE = 1
+    IF ACCTYPE = 1 THEN
+	X_OUTDATA="PICK"
+    END ELSE 
+	X_OUTDATA=tmprec<3>
+    END 
+    
+
+RETURN
+    
+************************************************************************
+*
+*  get the version number for this tool
+*
+************************************************************************
+GetToolVersion:
+    X_OUTDATA = "3.100.3"
+RETURN
+
+************************************************************************
+*
+*  create a new folder in the parent folder
+*
+************************************************************************
+OSCreateFolder:
+    BrowsePath = TRIM(X_PARAMS<1>)
+    SubPath = TRIM(X_PARAMS<2>)
+
+*    ShCmd = "cd ":BrowsePath
+*    GOSUB ShellCmd
+*    IF X_OUT <> "" THEN
+*        X_ERROR = ETOOL.NODIRECTORY
+*	X_OUTDATA = "parent directory does not exist."
+*	RETURN
+*    END
+
+    FullPATH=BrowsePath:OS.SEP:SubPath
+    * check if the path contains any white space, if yes, we need to use quotes
+    IF INDEX(FullPATH, " ", 1) <> 0  OR INDEX(FullPATH, CHAR(9), 1) <> 0 THEN
+	
+	IF INDEX(FullPATH, '"', 1) = 0 THEN
+		FullPATH = DQUOTE(FullPATH)
+	END ELSE IF INDEX(FullPATH, "'", 1) = 0 THEN
+                FullPATH = SQUOTE(FullPATH)
+	END ELSE 
+                FullPATH = "\":FullPATH:"\"
+        END 
+    END
+
+    IF OS.TYPE = "UNIX" THEN
+          ShCmd = "mkdir -p ":FullPATH
+    END ELSE
+          ShCmd = "mkdir ":FullPATH
+    END
+    GOSUB ShellCmd
+    IF X_OUT <> "" THEN 
+	X_ERROR = ETOOL.CREATEFAIL
+	X_OUTDATA = CHANGE(X_OUT, @FM, " ")
+	RETURN
+    END
+
+    X_OUTDATA=BrowsePath:OS.SEP:SubPath
+RETURN
+
+************************************************************************
+*
+*  run the UniData BASIC "NOCONVERT ON|OFF" command.
+*
+************************************************************************
+SetNoConvert:
+    * this is a UniData thing; does nothing in Universe    
+RETURN
+
+************************************************************************
+*
+*  get the UVHOME path
+*
+************************************************************************
+GetHome:
+    X_OUTDATA = SYSTEM(32)
+RETURN
+************************************************************************
+*
+*  Execute a shell command, put the result in X_OUT
+*
+************************************************************************
+ShellCmd:
+
+* Only add the quotes around the line on UNIX. On NT when using DOS /C
+* there is no need for them. Also need to escape the & characters using
+* ^& on NT and \& on UNIX.
+
+      back = 0
+
+      If OS.TYPE = "UNIX" Then
+         Command = "SH -c '"
+         If ShCmd[LEN(ShCmd)-1, 2] = "&&" Then
+            back = 1
+            ShCmd = ShCmd[1, Len(ShCmd) -2]
+         End
+         For x = 1 to Len(ShCmd)
+            if ShCmd[x,1] = "&" Then
+               Command := "\&"
+            End Else
+               Command := ShCmd[x,1]
+            End
+         Next
+         If back Then
+            Command := " &"
+         End
+         Command := "'"
+      End Else
+         Command = "DOS /c "
+         For x = 1 to Len(ShCmd)
+            if ShCmd[x,1] = "&" Then
+               * If we have a '&&' this is the NT Command separator so
+               * don't convert.
+               if ShCmd[x-1,4] = " && " then
+                  Command := "&"
+                  x += 1
+               End Else
+                  Command := "^&"
+               End
+            End Else
+               Command := ShCmd[x,1]
+            End
+         Next
+      End
+
+*    Execute Command, Out. > X_OUT
+     oldX_OUTDATA = X_OUTDATA  ;* E34492
+     X_OUTDATA = Command
+     GOSUB LOG
+     X_OUTDATA = oldX_OUTDATA  ;* E34492
+    HUSH OFF  SETTING pre_status
+    EXECUTE Command CAPTURING X_OUT
+    HUSH  pre_status
+RETURN
+
+
+***********************************************************************
+*  SetRCPToolName- set current RCP tool name
+*
+*  Input:  tool name
+*  Output: NONE
+***********************************************************************
+SetRCPToolName:
+   ToolName = X_PARAMS<1> 
+   * do nothing by default
+   * users can extend this
+RETURN
+
+
+***********************************************************************
+*  Unused- Returns a "Bad Call" error
+*
+*  Input:  NONE
+*  Output: NONE
+***********************************************************************
+Unused:
+    X_ERROR = ETOOL.BADCALL
+    X_OUTDATA = "Unsupported function call"
+RETURN
+
+**************************************************
+* Debugging log file
+*************************************
+InitLOG:
+
+* 34295 If Logging is @TRUE then log output
+IF Logging THEN
+
+    * 34257 Enhance Logging using unique names to prevent locking issues
+    * on Windows and to prevent corrupting the log file on UNIX
+    IF LogFilePath = "" THEN
+	IF OS.TYPE = "UNIX" THEN
+	    LogFilePath = "/tmp/XTOOLSUB"
+	END ELSE
+	    LogFilePath = "C:\tmp\XTOOLSUB"
+	END
+    END
+
+    LogFilePath = LogFilePath:"_":@DATE:"_":@TIME:".log"
+
+    OPENSEQ LogFilePath TO LogFile LOCKED PRINT "error" ELSE PRINT "error"
+    WRITESEQF "Start logging at ":OCONV(DATE(),'D2/'):" ":OCONV(TIME(),'MTHS') TO LogFile ELSE PRINT "error"
+END
+RETURN
+
+LOG:
+
+* 34295 If FILEINFO(LogFile,0) is @TRUE then log output
+IF FILEINFO(LogFile,0) THEN
+
+    rec = "Code ":X_CODE:", Para ":X_PARAMS:", Error ":X_ERROR:", Out ":X_OUTDATA
+    WRITESEQF rec TO LogFile  ELSE PRINT "error"
+    WRITESEQF '' TO LogFile ELSE NULL
+    IF ErrorAndClearXOUTDATA THEN
+       X_OUTDATA = ''
+       ErrorAndClearXOUTDATA = 0
+    END
+    
+END
+RETURN
+
+END

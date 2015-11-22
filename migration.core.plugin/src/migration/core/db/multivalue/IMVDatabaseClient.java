@@ -8,6 +8,6 @@ public interface IMVDatabaseClient {
 	
 	void deleteAccount(String accountName) throws MVProviderException;
 	
-	void createFile(MVFile fileModel) throws MVProviderException;
+	void createFile(String accountName, MVFile fileModel) throws MVProviderException;
 	
 }

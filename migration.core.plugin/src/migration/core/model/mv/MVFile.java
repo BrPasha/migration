@@ -6,9 +6,9 @@ import java.util.List;
 
 public class MVFile {
 	private String m_name;
-	private List<MVColumn> m_columns = new ArrayList<>();
+	private List<MVField> m_columns = new ArrayList<>();
 
-	public MVFile(String name, List<MVColumn> columns) {
+	public MVFile(String name, List<MVField> columns) {
 		m_name = name;
 		m_columns = new ArrayList<>(columns);
 	}
@@ -17,11 +17,11 @@ public class MVFile {
 		return m_name;
 	}
 
-	public List<MVColumn> getColumns() {
+	public List<MVField> getFields() {
 		return Collections.unmodifiableList(m_columns);
 	}
 
-	public void setColumns(List<MVColumn> columns) {
+	public void setColumns(List<MVField> columns) {
 		m_columns = new ArrayList<>(columns);
 	}
 

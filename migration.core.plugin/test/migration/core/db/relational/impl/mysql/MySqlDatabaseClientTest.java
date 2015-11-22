@@ -49,7 +49,7 @@ public class MySqlDatabaseClientTest {
 			System.out.println();
 			s.stream().forEach(tr -> {
 				MVFile mvt = tr.constructMVTable();
-				System.out.println(mvt.toString() + ": " + mvt.getColumns());
+				System.out.println(mvt.toString() + ": " + mvt.getFields());
 			});
 		});
 	}

@@ -17,8 +17,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
 
-import migration.core.model.mv.MVColumn;
-import migration.core.model.mv.MVColumnDepth;
+import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBRelationType;
@@ -191,24 +190,24 @@ public class Transfer {
 	}
 	
 	public MVFile constructMVTable() {
-		List<MVColumn> columns = new ArrayList<>();
-		columns.addAll(m_baseTable.getColumns().stream().map(rcol -> new MVColumn(
-				rcol.getTable() + "." + rcol.getName(), 
-				rcol.getName(), 
-				MVColumnDepth.singlevalue.toString(), 
-				"", 
-				"", 
-				"", 
-				"")).collect(Collectors.toList()));
-		columns.addAll(m_embeddedTables.stream().flatMap(t -> t.getColumns().stream())
-			.map(rcol -> new MVColumn(
-				rcol.getTable() + "." + rcol.getName(), 
-				rcol.getName(), 
-				MVColumnDepth.singlevalue.toString(), 
-				"", 
-				"", 
-				"", 
-				"")).collect(Collectors.toList()));
+		List<MVField> columns = new ArrayList<>();
+//		columns.addAll(m_baseTable.getColumns().stream().map(rcol -> new MVField(
+//				rcol.getTable() + "." + rcol.getName(), 
+//				rcol.getName(), 
+//				MVColumnDepth.singlevalue.toString(), 
+//				"", 
+//				"", 
+//				"", 
+//				"")).collect(Collectors.toList()));
+//		columns.addAll(m_embeddedTables.stream().flatMap(t -> t.getColumns().stream())
+//			.map(rcol -> new MVField(
+//				rcol.getTable() + "." + rcol.getName(), 
+//				rcol.getName(), 
+//				MVColumnDepth.singlevalue.toString(), 
+//				"", 
+//				"", 
+//				"", 
+//				"")).collect(Collectors.toList()));
 		return new MVFile(m_baseTable.getName(), columns);
 	}
 }

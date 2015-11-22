@@ -5,21 +5,23 @@ import java.text.MessageFormat;
 import asjava.uniclientlibs.UniDynArray;
 import asjava.uniclientlibs.UniException;
 import asjava.uniclientlibs.UniTokens;
+import asjava.uniobjects.UniDictionary;
 import asjava.uniobjects.UniJava;
 import asjava.uniobjects.UniSession;
 import asjava.uniobjects.UniSessionException;
 import asjava.uniobjects.UniSubroutine;
 import migration.core.db.multivalue.IMVDatabaseClient;
 import migration.core.db.multivalue.MVProviderException;
+import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
 
 public class UniVerseDatabaseClient implements IMVDatabaseClient {
 
+	private static final String DEFAULT_ACCOUNT = "UV";
 	private static final String XTOOLSUB = "*XTOOLSUB";
 
 	private String m_host;
 	private int m_port;
-	private String m_account;
 	private String m_username;
 	private String m_password;
 	
@@ -28,7 +30,6 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 	public UniVerseDatabaseClient(String host, int port, String account, String username, String password) {
 		m_host = host;
 		m_port = port;
-		m_account = account;
 		m_username = username;
 		m_password = password;
 		m_uniJava = new UniJava();
@@ -40,12 +41,12 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			session.setDataSourceType("UNIVERSE");
 			session.setHostName(m_host);
 			session.setHostPort(m_port);
-			session.setAccountPath(m_account);
+			session.setAccountPath(DEFAULT_ACCOUNT);
 			session.setUserName(m_username);
 			session.setPassword(m_password);
 			session.connect();
 			invokeXtoolsub(session, XTOOLSUBConstant.Initialize, "");
-			invokeXtoolsub(session, XTOOLSUBConstant.LogtoAccount, m_account);
+			invokeXtoolsub(session, XTOOLSUBConstant.LogtoAccount, DEFAULT_ACCOUNT);
 			return session;
 		} catch (UniException ex) {
 			throw new MVProviderException(ex);
@@ -61,14 +62,6 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			}
 		}
 	}
-	
-//	private String constructMkdirCommand(String account) {
-//		return MessageFormat.format("DOS /C mkdir {0}", account);
-//	}
-//	
-//	private String constructMakeAccountCommand(String accountPath, String u2Home) {
-//		return MessageFormat.format("DOS /C cd {0} & {1}\\bin\\mkaccount.exe NEWACC", accountPath, u2Home);
-//	}
 	
 	private String getU2Home(UniSession session) throws UniException {
 		return invokeXtoolsub(session, XTOOLSUBConstant.GetHome, "").extract(1).toString();
@@ -95,7 +88,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 	public void createAccount(String accountName) throws MVProviderException {
 		UniSession session = openSession();
 		try {
-			createAccount(accountName, session);
+			createAccount(session, accountName);
 		} catch (UniException ex) {
 			throw new MVProviderException(ex);
 		} finally {
@@ -114,34 +107,65 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			closeSession(session);
 		}
 	}
-
-//	private void createAccount1(String accountName, UniSession session) throws UniException {
-//		String u2Home = getU2Home(session);
-//		String accountPath = u2Home + "\\" + accountName;
-//		UniCommand command = session.command(constructMkdirCommand(accountPath));
-//		command.exec();
-//		System.out.println(command.status() + ": " + command.response());
-//		command = session.command(constructMakeAccountCommand(accountPath, u2Home));
-//		command.exec();
-//		System.out.println(command.status() + ": " + command.response());
-//	}
 	
-	private void createAccount(String accountName, UniSession session) throws UniException {
-		UniDynArray params = new UniDynArray(session, "");
+	private void createAccount(UniSession session, String accountName) throws UniException {
+		UniDynArray params = session.dynArray("");
 		params.replace(1, getU2Home(session) + "\\" + accountName);
 		params.replace(2, accountName);
 		params.replace(3, "1");
-		UniDynArray flavor = new UniDynArray(session, "");
+		UniDynArray flavor = session.dynArray("");
 		flavor.replace(2, "NEWACC");
 		flavor.replace(3, "0");
 		params.replace(4, flavor);
 		invokeXtoolsub(session, XTOOLSUBConstant.NewAcct, params.toString());
 	}
+	
+	private void logtoAccount(UniSession session, String accountName) throws UniException {
+		UniDynArray params = session.dynArray(accountName);
+		invokeXtoolsub(session, XTOOLSUBConstant.LogtoAccount, params.toString());
+	}
 
 	@Override
-	public void createFile(MVFile fileModel) throws MVProviderException {
-		// TODO Auto-generated method stub
+	public void createFile(String accountName, MVFile fileModel) throws MVProviderException {
+		UniSession session = openSession();
+		try {
+			logtoAccount(session, accountName);
+			createFile(session, fileModel);
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
+		} finally {
+			closeSession(session);
+		}
+	}
 
+	private void createFile(UniSession session, MVFile fileModel) throws UniException {
+		UniDynArray param = session.dynArray("");
+		param.replace(1, fileModel.getName()); // File Name
+		param.replace(2, "DYNAMIC"); // File Type
+		param.replace(3, "1"); // Minimum Modulus
+		param.replace(4, "1"); // Group Size
+		param.replace(5, "80"); // Large Record
+		param.replace(6, "80"); // Split Load
+		param.replace(7, "50"); // Merge Load
+		param.replace(8, "GENERAL"); // Hashing Algorithm
+		param.replace(9, "1"); // 64-bit
+		invokeXtoolsub(session, XTOOLSUBConstant.CreateFile, param.toString());
+		UniDictionary dict = session.openDict(fileModel.getName());
+		try {
+			for (MVField fieldModel : fileModel.getFields()) {
+				UniDynArray fieldDescription = session.dynArray("");
+				fieldDescription.replace(1, fieldModel.getType());
+				fieldDescription.replace(2, fieldModel.getType().startsWith("D") ? fieldModel.getLocation() : fieldModel.getDef());
+				fieldDescription.replace(3, fieldModel.getConvCode());
+				fieldDescription.replace(4, fieldModel.getHeading());
+				fieldDescription.replace(5, fieldModel.getFormat());
+				fieldDescription.replace(6, fieldModel.getDepth());
+				fieldDescription.replace(7, fieldModel.getAssoc());
+				dict.write(fieldModel.getName(), fieldDescription);
+			}
+		} finally {
+			dict.close();
+		}
 	}
 
 }
