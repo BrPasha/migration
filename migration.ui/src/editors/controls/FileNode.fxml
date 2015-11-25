@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.image.*?>
@@ -64,10 +65,13 @@
       </AnchorPane>
       <VBox alignment="CENTER_RIGHT">
          <children>
-            <ImageView fitHeight="8.0" fitWidth="8.0" pickOnBounds="true" preserveRatio="true">
+            <ImageView fitHeight="8.0" fitWidth="8.0" onMouseDragged="#onMouseDraggedResizeImage" onMousePressed="#onMousePressedResizeImage" onMouseReleased="#onMouseReleasedResizeImage" pickOnBounds="true" preserveRatio="true">
                <image>
                   <Image url="@../../../icon/triangle.png" />
                </image>
+               <cursor>
+                  <Cursor fx:constant="SE_RESIZE" />
+               </cursor>
             </ImageView>
          </children>
          <padding>

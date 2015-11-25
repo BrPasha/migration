@@ -1,7 +1,5 @@
 package editors.controls;
 
-import editors.models.FieldModel;
-import editors.models.FileModel;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -16,7 +14,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import migration.core.model.mv.MVField;
+import migration.core.model.mv.MVFile;
 
 /**
  * <pre>
@@ -29,6 +28,10 @@ import javafx.scene.layout.Pane;
  */
 public class FileNode extends UserControl
 {
+    private static final String COLUMN_NAME = "name";
+    private static final String COLUMN_IS_MULTIVALUE = "type";
+    private static final String COLUMN_TABLE = "location";
+    
     @FXML
     private Label labelTitle;
     
@@ -36,46 +39,44 @@ public class FileNode extends UserControl
     private HBox hboxHeader;
     
     @FXML
-    private TableView<FieldModel> tableFields;
+    private TableView<MVField> tableFields;
  
     @FXML
-    private TableColumn<FieldModel, String> columnName;
+    private TableColumn<MVField, String> columnName;
  
     @FXML
-    private TableColumn<FieldModel, String> columnMultivalue;
+    private TableColumn<MVField, String> columnMultivalue;
  
     @FXML
-    private TableColumn<FieldModel, String> columnTable;
+    private TableColumn<MVField, String> columnTable;
 
     @FXML
     private void initialize() {
 
-        columnName.setCellValueFactory(new PropertyValueFactory<FieldModel, String>("name"));
+        columnName.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_NAME));
         columnName.setEditable(true);
-        columnName.setCellFactory(TextFieldTableCell.<FieldModel>forTableColumn());
+        columnName.setCellFactory(TextFieldTableCell.<MVField>forTableColumn());
         columnName.setOnEditCommit(
-            new EventHandler<CellEditEvent<FieldModel, String>>() {
+            new EventHandler<CellEditEvent<MVField, String>>() {
                 @Override
-                public void handle(CellEditEvent<FieldModel, String> t) {
-                    ((FieldModel) t.getTableView().getItems().get(
+                public void handle(CellEditEvent<MVField, String> t) {
+                    ((MVField) t.getTableView().getItems().get(
                         t.getTablePosition().getRow())
                         ).setName(t.getNewValue());
                 }
             }
         );
-        columnMultivalue.setCellValueFactory(new PropertyValueFactory<FieldModel, String>("isSingleValue"));
-        columnTable.setCellValueFactory(new PropertyValueFactory<FieldModel, String>("table"));
+        columnMultivalue.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_IS_MULTIVALUE));
+        columnTable.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_TABLE));
     }
     
-    private ObservableList<FieldModel> fields = FXCollections.observableArrayList();
+    private ObservableList<MVField> fields = FXCollections.observableArrayList();
     
-    public FileNode(FileModel model){
+    public FileNode(MVFile model){
         super();
         
-        for(FieldModel field : model.getFields()){
-            fields.add(field);
-        }
         labelTitle.setText(model.getName());
+        fields.addAll(model.getFields());
         tableFields.setItems(fields);
         
         //tableFields.setSelectionModel(null);
@@ -84,8 +85,8 @@ public class FileNode extends UserControl
             @Override
             public void changed(ObservableValue<? extends Number> source, Number oldWidth, Number newWidth)
             {
-                Pane header = (Pane) tableFields.lookup("TableHeaderRow");
-                header.setStyle("-fx-background-color: #669933;");
+//                Pane header = (Pane) tableFields.lookup("TableHeaderRow");
+//                header.setStyle("-fx-background-color: #669933;");
 //                if (header.isVisible()){
 //                    header.setMaxHeight(0);
 //                    header.setMinHeight(0);

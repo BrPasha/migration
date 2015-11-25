@@ -2,16 +2,11 @@ package application;
 
 import editors.controls.FileNode;
 import editors.controls.TableNode;
-import editors.models.FieldModel;
-import editors.models.FileModel;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 
@@ -73,12 +68,12 @@ public class Main extends Application {
 //			    };
 //			editor.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
 //			
-			final Pane editorFile = (Pane)scene.lookup("#u2schema");
-			editorFile.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                          public void handle(MouseEvent event) {
-                              editorFile.getChildren().add(createFile(event.getX(), event.getY()));
-                          }
-            });
+//			final Pane editorFile = (Pane)scene.lookup("#u2schema");
+//			editorFile.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+//                          public void handle(MouseEvent event) {
+//                              editorFile.getChildren().add(createFile(event.getX(), event.getY()));
+//                          }
+//            });
 			controller.showTables();
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -95,23 +90,23 @@ public class Main extends Application {
 //        control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
         return null;
 	}
-	
-    public FileNode createFile(double x, double y){
-        FileModel model = new FileModel("File1", new FieldModel[] {new FieldModel("field1",true,"Table1"),
-                                                                     new FieldModel("field2",false,"Table2"),
-                                                                     new FieldModel("field3",true,"Table1"),
-                                                                     new FieldModel("field4",true,"Table2"),
-                                                                     new FieldModel("field5",false,"Table2"),
-                                                                     new FieldModel("field6",true,"Table1"),
-                                                                     new FieldModel("field7",false,"Table2"),
-                                                                     new FieldModel("field8",true,"Table1"),
-                                                                     new FieldModel("field9",false,"Table1"),
-                                                                     new FieldModel("field10",true,"Table1"),
-                                                                     new FieldModel("field11",true,"Table1")});
-        FileNode control = new FileNode(model);
-        control.setLayoutX(x);
-        control.setLayoutY(y);
-        return control;
+
+	public FileNode createFile(double x, double y){
+//        FileModel model = new FileModel("File1", new FieldModel[] {new FieldModel("field1",true,"Table1"),
+//                                                                     new FieldModel("field2",false,"Table2"),
+//                                                                     new FieldModel("field3",true,"Table1"),
+//                                                                     new FieldModel("field4",true,"Table2"),
+//                                                                     new FieldModel("field5",false,"Table2"),
+//                                                                     new FieldModel("field6",true,"Table1"),
+//                                                                     new FieldModel("field7",false,"Table2"),
+//                                                                     new FieldModel("field8",true,"Table1"),
+//                                                                     new FieldModel("field9",false,"Table1"),
+//                                                                     new FieldModel("field10",true,"Table1"),
+//                                                                     new FieldModel("field11",true,"Table1")});
+//        FileNode control = new FileNode(model);
+//        control.setLayoutX(x);
+//        control.setLayoutY(y);
+        return null;
     }
 	   
 	public static void main(String[] args) {

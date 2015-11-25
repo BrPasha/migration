@@ -1,11 +1,10 @@
 package editors.database;
 
-import java.util.List;
-
 import editors.controls.TableNode;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
 
 /**
@@ -19,20 +18,27 @@ import migration.core.model.rdb.RDBTable;
  */
 public class RDBEditor
 {
-    private Pane m_pane;
     private static final double SPACE = 10;
+    
+    private Pane m_pane;
+    private RDBStructure m_structure;
     
     public RDBEditor(Pane pane)
     {
         this.m_pane = pane;
     }
     
-    public void addTables(List<RDBTable> tables)
+    public void setStructure(RDBStructure structure)
     {
-        for (RDBTable table : tables){
+        m_structure = structure;
+        for (RDBTable table : structure.getTables()){
             TableNode node = createTable(table);
             m_pane.getChildren().add(node);
         }
+    }
+    
+    public RDBStructure getStructure(){
+        return m_structure;
     }
     
     public void relayout(){

@@ -14,7 +14,7 @@ public class MVField {
 	public MVField() {
 	}
 	
-	public MVField(String name, String type, String location, String def, String convCode, String heading, String format, String depth, String assoc) {
+	public MVField(String name, String location, String type, String def, String convCode, String heading, String format, String depth, String assoc) {
 		m_name = name;
 		m_convCode = convCode;
 		m_heading = heading;

@@ -7,4 +7,6 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.junit
 Export-Package: migration.core.db.relational,
  migration.core.db.relational.impl.mysql,
- migration.core.model.rdb
+ migration.core.model.mv,
+ migration.core.model.rdb,
+ migration.core.model.transfer
