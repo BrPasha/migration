@@ -3,50 +3,38 @@ package migration.core.model.rdb;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class RDBTable {
 	
-	private String m_name;
+	private final String m_name;
 	private String m_remarks;
 	private List<RDBColumn> m_columns;
 	private RDBPrimaryKey m_primaryKey;
 	
-	public RDBTable() {
-	}
-	
+	private int m_hashCode;
+		
 	public RDBTable(String name, String remarks, List<RDBColumn> columns) {
 		m_name = name;
+		m_hashCode = calculateHashCode();
 		m_remarks = remarks;
 		m_columns = new ArrayList<>(columns);
 	}
 	
-	@JsonProperty("name")
 	public String getName() {
 		return m_name;
 	}
 	
-	@JsonProperty("name")
-	public void setName(String name) {
-		m_name = name;
-	}
-	
-	@JsonProperty("columns")
 	public List<RDBColumn> getColumns() {
 		return m_columns;
 	}
 	
-	@JsonProperty("columns")
 	public void setColumns(List<RDBColumn> columns) {
 		m_columns = columns;
 	}
 	
-	@JsonProperty("remarks")
 	public String getRemarks() {
 		return m_remarks;
 	}
 	
-	@JsonProperty("remarks")
 	public void setRemarks(String remarks) {
 		m_remarks = remarks;
 	}
@@ -66,9 +54,12 @@ public class RDBTable {
 
 	@Override
 	public int hashCode() {
+		return m_hashCode;
+	}
+
+	private int calculateHashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((m_columns == null) ? 0 : m_columns.hashCode());
 		result = prime * result + ((m_name == null) ? 0 : m_name.hashCode());
 		return result;
 	}
@@ -82,11 +73,6 @@ public class RDBTable {
 		if (getClass() != obj.getClass())
 			return false;
 		RDBTable other = (RDBTable) obj;
-		if (m_columns == null) {
-			if (other.m_columns != null)
-				return false;
-		} else if (!m_columns.equals(other.m_columns))
-			return false;
 		if (m_name == null) {
 			if (other.m_name != null)
 				return false;

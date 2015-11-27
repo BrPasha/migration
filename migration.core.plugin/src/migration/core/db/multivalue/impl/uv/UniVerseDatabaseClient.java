@@ -2,15 +2,18 @@ package migration.core.db.multivalue.impl.uv;
 
 import java.text.MessageFormat;
 
+import asjava.uniclientlibs.UniDataSet;
 import asjava.uniclientlibs.UniDynArray;
 import asjava.uniclientlibs.UniException;
 import asjava.uniclientlibs.UniTokens;
 import asjava.uniobjects.UniDictionary;
+import asjava.uniobjects.UniFile;
 import asjava.uniobjects.UniJava;
 import asjava.uniobjects.UniSession;
 import asjava.uniobjects.UniSessionException;
 import asjava.uniobjects.UniSubroutine;
 import migration.core.db.multivalue.IMVDatabaseClient;
+import migration.core.db.multivalue.IMVResultSet;
 import migration.core.db.multivalue.MVProviderException;
 import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
@@ -168,4 +171,27 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 		}
 	}
 
+	@Override
+	public void exportData(String accountName, String fileName, IMVResultSet rs) throws MVProviderException {
+		UniSession session = openSession();
+		try {
+			logtoAccount(session, accountName);
+			UniFile file = session.openFile(fileName);
+			try {
+				UniDataSet dataSet = session.dataSet();
+				while (rs.next()) {
+					dataSet.append(rs.id(), rs.row());
+				}
+				file.write(dataSet);
+			} finally {
+				file.close();
+			}
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+	
 }

@@ -10,4 +10,6 @@ public interface IMVDatabaseClient {
 	
 	void createFile(String accountName, MVFile fileModel) throws MVProviderException;
 	
+	void exportData(String accountName, String fileName, IMVResultSet rs) throws MVProviderException;
+	
 }

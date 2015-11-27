@@ -2,10 +2,10 @@ package migration.core.model.transfer;
 
 import static migration.core.util.Misc.permutationsFloatingSize;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,6 +20,7 @@ import com.google.common.collect.Collections2;
 import migration.core.model.mv.MVColumnDepth;
 import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
+import migration.core.model.rdb.RDBColumn;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
@@ -28,15 +29,19 @@ import migration.core.util.Pair;
 
 public class Transfer {
 	private RDBTable m_baseTable;
-	private Set<RDBTable> m_embeddedTables = new HashSet<>();
+	private Set<RDBTable> m_embeddedTables;
+	
+	private int m_hashCode;
 	
 	public Transfer(RDBTable baseTable, Collection<RDBTable> embeddedTables) {
 		m_baseTable = baseTable;
+		m_embeddedTables = new TreeSet<>((table1, table2) -> table1.getName().compareTo(table2.getName()));
 		m_embeddedTables.addAll(embeddedTables);
+		m_hashCode = calculateHashCode();
 	}
 	
 	public Transfer(RDBTable baseTable) {
-		m_baseTable = baseTable;
+		this(baseTable, Collections.emptySet());
 	}
 	
 	public RDBTable getBaseTable() {
@@ -89,12 +94,7 @@ public class Transfer {
 			}
 		}
 		Set<Set<Transfer>> structures = new HashSet<>(transformations);
-		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>(new Comparator<Set<Transfer>>() {
-			@Override
-			public int compare(Set<Transfer> o1, Set<Transfer> o2) {
-				return getWeight(o1, structure) - getWeight(o2, structure) > 0 ? -1 : 1;
-			}
-		});
+		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>((o1, o2) -> getWeight(o1, structure) - getWeight(o2, structure) > 0 ? -1 : 1);
 		orderedStructures.addAll(structures);
 		return new ArrayList<>(orderedStructures);
 	}
@@ -161,6 +161,10 @@ public class Transfer {
 
 	@Override
 	public int hashCode() {
+		return m_hashCode;
+	}
+
+	private int calculateHashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((m_baseTable == null) ? 0 : m_baseTable.hashCode());
@@ -191,26 +195,124 @@ public class Transfer {
 	}
 	
 	public MVFile constructMVTable() {
-		List<MVField> columns = new ArrayList<>();
-		columns.addAll(m_baseTable.getColumns().stream().map(rcol -> new MVField(
-				rcol.getTable() + "." + rcol.getName(), 
-				rcol.getName(), 
-				MVColumnDepth.singlevalue.toString(), 
-				"", 
-				"", 
-				"", 
-				"",
-				"",
-				"")).collect(Collectors.toList()));
-//		columns.addAll(m_embeddedTables.stream().flatMap(t -> t.getColumns().stream())
-//			.map(rcol -> new MVField(
-//				rcol.getTable() + "." + rcol.getName(), 
-//				rcol.getName(), 
-//				MVColumnDepth.singlevalue.toString(), 
-//				"", 
-//				"", 
-//				"", 
-//				"")).collect(Collectors.toList()));
-		return new MVFile(m_baseTable.getName(), columns);
+		List<MVField> mvFields = new ArrayList<>();
+		int fieldLocation = 1;
+		for (RDBColumn column : m_baseTable.getColumns()) {
+			String convCode = resolveConvCode(column);
+			String format = resolveFormat(column);
+			MVField mvField = new MVField(
+					column.getName(), 
+					"D", 
+					String.valueOf(fieldLocation++), 
+					"", 
+					convCode, 
+					column.getName(), 
+					format, 
+					MVColumnDepth.singlevalue.getValue(), 
+					"");
+			mvFields.add(mvField);
+		}
+		for (RDBTable embeddedTable : m_embeddedTables) {
+			for (RDBColumn column : embeddedTable.getColumns()) {
+				if (needToInclude(column)) {
+					String convCode = resolveConvCode(column);
+					String format = resolveFormat(column);
+					MVColumnDepth depth = MVColumnDepth.multivalue;
+					String assoc = resolveAssociation(column, embeddedTable, m_baseTable);
+					MVField mvField = new MVField(
+							column.getName(), 
+							"D", 
+							String.valueOf(fieldLocation++), 
+							"", 
+							convCode, 
+							column.getName(), 
+							format, 
+							depth.getValue(), 
+							assoc);
+					mvFields.add(mvField);
+				}
+			}
+		}
+		return new MVFile(m_baseTable.getName(), mvFields);
+	}
+	
+	private boolean needToInclude(RDBColumn column) {
+		return true;
+	}
+
+	private String resolveAssociation(RDBColumn column, RDBTable embeddedTable, RDBTable baseTable) {
+		return "";
+	}
+
+	private String resolveFormat(RDBColumn column) {
+		String format = "";
+		switch (column.getDataType()) {
+		case Types.VARCHAR:
+		case Types.NVARCHAR:
+		case Types.LONGVARCHAR:
+		case Types.CHAR:
+		case Types.CLOB:
+			format = String.valueOf(column.getColumnSize()) + "L";
+			break;
+		case Types.TIME:
+		case Types.DATE:
+		case Types.TIMESTAMP:
+		case Types.TIME_WITH_TIMEZONE:
+		case Types.TIMESTAMP_WITH_TIMEZONE:
+			format = "";
+			break;
+		case Types.DECIMAL:
+		case Types.DOUBLE:
+		case Types.INTEGER:
+		case Types.NUMERIC:
+		case Types.REAL:
+		case Types.FLOAT:
+		case Types.SMALLINT:
+		case Types.TINYINT:
+		case Types.BIT:
+			format = String.valueOf(column.getColumnSize()) + "R";
+			break;
+		}
+		return format;
+	}
+
+	private String resolveConvCode(RDBColumn column) {
+		String convCode = "";
+		switch (column.getDataType()) {
+		case Types.VARCHAR:
+		case Types.NVARCHAR:
+		case Types.LONGVARCHAR:
+		case Types.CHAR:
+		case Types.CLOB:
+			convCode = "";
+			break;
+		case Types.TIME:
+			convCode = "MTH";
+			break;
+		case Types.DATE:
+			convCode = "D4-";
+			break;
+		case Types.TIMESTAMP:
+		case Types.TIME_WITH_TIMEZONE:
+		case Types.TIMESTAMP_WITH_TIMEZONE:
+			convCode = "";
+			break;
+		case Types.DECIMAL:
+		case Types.NUMERIC:
+			convCode = "MD" + column.getDecimalDigits();
+			break;
+		case Types.DOUBLE:
+		case Types.REAL:
+		case Types.FLOAT:
+			convCode = "MR" + column.getDecimalDigits();
+			break;
+		case Types.INTEGER:
+		case Types.SMALLINT:
+		case Types.TINYINT:
+		case Types.BIT:
+			convCode = "MD0";
+			break;
+		}
+		return convCode;
 	}
 }
