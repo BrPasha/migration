@@ -48,7 +48,7 @@ public class MySqlDatabaseClientTest {
 			System.out.println(s.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum());
 			System.out.println();
 			s.stream().forEach(tr -> {
-				MVFile mvt = tr.constructMVTable();
+				MVFile mvt = tr.constructMVFile();
 				System.out.println(mvt.toString() + ": " + mvt.getFields());
 			});
 		});

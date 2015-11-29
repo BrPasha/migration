@@ -11,7 +11,7 @@ public class UniVerseDatabaseClientTest {
 
 	@Test
 	public void testCreateAccount() throws Exception {
-		UniVerseDatabaseClient client = new UniVerseDatabaseClient("localhost", 31438, "UV", "u2user", "!u2password");
+		UniVerseDatabaseClient client = new UniVerseDatabaseClient("localhost", 31438, "u2user", "!u2password");
 //		try {
 //			client.deleteAccount("TESTACC");
 //		} catch (Exception ex) {

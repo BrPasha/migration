@@ -10,7 +10,7 @@ public enum MVColumnDepth {
 		m_value = value;
 	}
 	
-	public String getValue() {
+	public String value() {
 		return m_value;
 	}
 }

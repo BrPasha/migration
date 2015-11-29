@@ -30,7 +30,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 	
 	private UniJava m_uniJava;
 
-	public UniVerseDatabaseClient(String host, int port, String account, String username, String password) {
+	public UniVerseDatabaseClient(String host, int port, String username, String password) {
 		m_host = host;
 		m_port = port;
 		m_username = username;

@@ -134,7 +134,7 @@ public class ApplicationController {
             Set<Transfer> variant = transformations.get(i);
             List<MVFile> files = new ArrayList<MVFile>();
             for (Transfer transfer : variant){
-                files.add(transfer.constructMVTable());
+                files.add(transfer.constructMVFile());
             }
             Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane);
             MVEditor editor = new MVEditor(pane);

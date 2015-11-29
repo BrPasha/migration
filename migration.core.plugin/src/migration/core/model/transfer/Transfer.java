@@ -28,20 +28,23 @@ import migration.core.model.rdb.RDBTable;
 import migration.core.util.Pair;
 
 public class Transfer {
-	private RDBTable m_baseTable;
-	private Set<RDBTable> m_embeddedTables;
-	
 	private int m_hashCode;
 	
-	public Transfer(RDBTable baseTable, Collection<RDBTable> embeddedTables) {
+	private RDBTable m_baseTable;
+	private Set<RDBTable> m_embeddedTables;
+
+	private RDBStructure m_structure;
+	
+	public Transfer(RDBTable baseTable, Collection<RDBTable> embeddedTables, RDBStructure structure) {
 		m_baseTable = baseTable;
+		m_structure = structure;
 		m_embeddedTables = new TreeSet<>((table1, table2) -> table1.getName().compareTo(table2.getName()));
 		m_embeddedTables.addAll(embeddedTables);
 		m_hashCode = calculateHashCode();
 	}
 	
-	public Transfer(RDBTable baseTable) {
-		this(baseTable, Collections.emptySet());
+	public Transfer(RDBTable baseTable, RDBStructure structure) {
+		this(baseTable, Collections.emptySet(), structure);
 	}
 	
 	public RDBTable getBaseTable() {
@@ -107,7 +110,7 @@ public class Transfer {
 		List<RDBTable> related = findRelated(table, tables, structure.getRelations());
 		List<Set<Transfer>> result = new ArrayList<>();
 		if (related.isEmpty()) {
-			Transfer transfer = new Transfer(table);
+			Transfer transfer = new Transfer(table, structure);
 			if (!tables.isEmpty()) {
 				LinkedList<RDBTable> remaining = new LinkedList<RDBTable>(tables);
 				List<Set<Transfer>> nextTransfers = process(structure, remaining.pop(), remaining);
@@ -129,7 +132,7 @@ public class Transfer {
 					.collect(Collectors.toList());
 			result.addAll(usedAndRemaining.stream().map(p -> {
 				List<Set<Transfer>> res = new ArrayList<>();
-				Transfer transfer = new Transfer(table, p.first());
+				Transfer transfer = new Transfer(table, p.first(), structure);
 				if (!p.second().isEmpty()) {
 					List<Set<Transfer>> nextTransfers = process(structure, p.second().pop(), p.second());
 					nextTransfers.stream().forEach(list -> list.add(transfer));
@@ -194,7 +197,7 @@ public class Transfer {
 		return true;
 	}
 	
-	public MVFile constructMVTable() {
+	public MVFile constructMVFile() {
 		List<MVField> mvFields = new ArrayList<>();
 		int fieldLocation = 1;
 		for (RDBColumn column : m_baseTable.getColumns()) {
@@ -208,17 +211,18 @@ public class Transfer {
 					convCode, 
 					column.getName(), 
 					format, 
-					MVColumnDepth.singlevalue.getValue(), 
+					MVColumnDepth.singlevalue.value(), 
 					"");
 			mvFields.add(mvField);
 		}
 		for (RDBTable embeddedTable : m_embeddedTables) {
+			MVColumnDepth depth = resolveDepth(embeddedTable);
+			String associationName = depth == MVColumnDepth.multivalue ? embeddedTable.getName() + "_association" : "";
+			List<String> addedColumnNames = new ArrayList<>();
 			for (RDBColumn column : embeddedTable.getColumns()) {
 				if (needToInclude(column)) {
 					String convCode = resolveConvCode(column);
 					String format = resolveFormat(column);
-					MVColumnDepth depth = MVColumnDepth.multivalue;
-					String assoc = resolveAssociation(column, embeddedTable, m_baseTable);
 					MVField mvField = new MVField(
 							column.getName(), 
 							"D", 
@@ -227,21 +231,47 @@ public class Transfer {
 							convCode, 
 							column.getName(), 
 							format, 
-							depth.getValue(), 
-							assoc);
+							depth.value(), 
+							associationName);
 					mvFields.add(mvField);
+					addedColumnNames.add(column.getName());
 				}
+			}
+			if (depth == MVColumnDepth.multivalue) {
+				MVField mvField = new MVField(
+						associationName, 
+						"PH", 
+						"", 
+						String.join(" ", addedColumnNames), 
+						"", 
+						associationName, 
+						"", 
+						MVColumnDepth.singlevalue.value(), 
+						"");
+				mvFields.add(mvField);
 			}
 		}
 		return new MVFile(m_baseTable.getName(), mvFields);
 	}
 	
-	private boolean needToInclude(RDBColumn column) {
-		return true;
+	private MVColumnDepth resolveDepth(RDBTable embeddedTable) {
+		Optional<RDBRelation> optRelation = m_structure.getRelations().stream()
+				.filter(relation -> (relation.getTable1().equals(embeddedTable.getName())
+						&& relation.getTable2().equals(m_baseTable.getName()))
+						|| (relation.getTable1().equals(m_baseTable.getName())
+							&& relation.getTable2().equals(embeddedTable.getName())))
+				.findAny();
+		RDBRelation relation = optRelation.get();
+		MVColumnDepth result = MVColumnDepth.singlevalue;
+		if (relation.getRelationType() == RDBRelationType.primaryToForeign
+			&& relation.getTable2().equals(embeddedTable.getName())) {
+			result = MVColumnDepth.multivalue;
+		}
+		return result;
 	}
 
-	private String resolveAssociation(RDBColumn column, RDBTable embeddedTable, RDBTable baseTable) {
-		return "";
+	private boolean needToInclude(RDBColumn column) {
+		return true;
 	}
 
 	private String resolveFormat(RDBColumn column) {
@@ -287,10 +317,10 @@ public class Transfer {
 			convCode = "";
 			break;
 		case Types.TIME:
-			convCode = "MTH";
+			convCode = "MTHS";
 			break;
 		case Types.DATE:
-			convCode = "D4-";
+			convCode = "D4/";
 			break;
 		case Types.TIMESTAMP:
 		case Types.TIME_WITH_TIMEZONE:
