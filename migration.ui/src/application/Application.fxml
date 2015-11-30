@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Background?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
    <top>
       <BorderPane prefHeight="66.0" prefWidth="600.0" style="-fx-background-color: #0B2D5A;" BorderPane.alignment="CENTER">
          <left>
@@ -37,13 +37,18 @@
          </center>
          <right>
             <Pane translateY="13">
-      				<children>
-      					<Button fx:id="btn_Info" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="30.0" prefWidth="32.0" styleClass="button-info" text="i" textAlignment="CENTER" textOverrun="CLIP" translateX="25.0" BorderPane.alignment="CENTER_RIGHT">
+      				<children> 
+      					<Button fx:id="btn_Info" prefHeight="35.0" prefWidth="36.0" styleClass="button-info" BorderPane.alignment="CENTER_RIGHT"
+      						contentDisplay="RIGHT" mnemonicParsing="false" 
+      						text="i" textAlignment="CENTER" textOverrun="CLIP" 
+      						translateX="25.0" >
           					<font>
             					<Font name="Trebuchet MS" size="14.0" style="bold" />
           					</font>
         				</Button>
-        				<Button fx:id="btn_Settings" onMouseClicked="#btn_Settings_clicked" prefHeight="30.0" prefWidth="32.0" styleClass="button-settings" translateX="-20" BorderPane.alignment="CENTER_LEFT">
+        				<Button fx:id="btn_Settings" prefHeight="0.0" prefWidth="36.0" styleClass="button-settings" BorderPane.alignment="CENTER_RIGHT"
+      						contentDisplay="RIGHT" mnemonicParsing="false" 
+      						translateX="-20.0" onMouseClicked="#btn_Settings_clicked" >
         				</Button>
       				</children>
       			</Pane>
@@ -126,39 +131,6 @@
                </top>
                <center>
                   <TabPane fx:id="mvTabPane" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
-                    <tabs>
-                     	<Tab text="VARIANT 1">
-                        	<content>
-                          		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                 <children>
-                                    <ScrollPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                      <content>
-                                        <AnchorPane minHeight="200.0" minWidth="200.0">
-                                             <children>
-                                                <Pane id="u2schema" style="-fx-background-color: #0A2447;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                             </children>
-                                          </AnchorPane>
-                                      </content>
-                                    </ScrollPane>
-                                 </children></AnchorPane>
-                        	</content>
-                      	</Tab>
-                      	<Tab text="VARIANT 2">
-                  			<content>
-                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                  			</content>
-                		</Tab>
-                		<Tab text="VARIANT 3">
-                  			<content>
-                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                  			</content>
-                		</Tab>
-                		<Tab text="VARIANT 4">
-                 			<content>
-                    			<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                  			</content>
-                  		</Tab>
-                    </tabs>
                     <BorderPane.margin>
                         <Insets left="20.0" right="30.0" />
                     </BorderPane.margin>

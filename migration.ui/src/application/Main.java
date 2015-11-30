@@ -17,7 +17,7 @@ public class Main extends Application {
 		try { 
 		    
 	        FXMLLoader loader = new FXMLLoader();
-	        ApplicationController controller = new ApplicationController();
+	        final ApplicationController controller = new ApplicationController();
 	        loader.setController(controller);
 	        loader.setLocation(getClass().getResource("Application.fxml"));
 			BorderPane root = (BorderPane)loader.load();
@@ -26,7 +26,7 @@ public class Main extends Application {
 
 			primaryStage.setScene(scene);
 			primaryStage.setTitle("Migration Tool");
-			primaryStage.getIcons().add(new Image("file:icon/Rocket25.png"));
+			primaryStage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			primaryStage.show();
 //			final ScrollPane tab = (ScrollPane)scene.lookup("#tab");
 //			tab.viewportBoundsProperty().addListener(new ChangeListener<Bounds>() {
@@ -74,6 +74,8 @@ public class Main extends Application {
 //                              editorFile.getChildren().add(createFile(event.getX(), event.getY()));
 //                          }
 //            });
+			
+			
 			controller.showTables();
 		} catch(Exception e) {
 			e.printStackTrace();
