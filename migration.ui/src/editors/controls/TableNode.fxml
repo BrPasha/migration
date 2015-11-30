@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="200.0" style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="200.0" style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
     <bottom>
        <VBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
           <children>

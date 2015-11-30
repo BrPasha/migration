@@ -33,6 +33,7 @@ public class RDBEditor
         m_structure = structure;
         for (RDBTable table : structure.getTables()){
             TableNode node = createTable(table);
+            node.layout();
             m_pane.getChildren().add(node);
         }
     }
@@ -46,6 +47,7 @@ public class RDBEditor
         double y = SPACE;
         double maxHeight = 0;
         
+        System.out.println("Start");
         for (Node node: m_pane.getChildren()){
             if (node instanceof Region){
                 if (x > width){
@@ -58,6 +60,7 @@ public class RDBEditor
                 if (maxHeight < ((Region)node).getHeight()){
                     maxHeight = ((Region)node).getHeight();
                 }
+                System.out.println(((Region)node).getWidth());
                 x = x + ((Region)node).getWidth() + SPACE;
             }
         }
@@ -67,6 +70,10 @@ public class RDBEditor
         TableNode control = new TableNode(model);
         control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
         return control;
+    }
+    
+    public void layout(){
+        m_pane.layout();
     }
 }
 

@@ -6,8 +6,10 @@ import java.util.Set;
 
 import editors.database.MVEditor;
 import editors.database.RDBEditor;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,7 +25,9 @@ import javafx.stage.Stage;
 import migration.core.db.relational.ProviderException;
 import migration.core.db.relational.impl.mysql.MySqlDatabaseClient;
 import migration.core.model.mv.MVFile;
+import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
+import migration.core.model.rdb.RDBTable;
 import migration.core.model.transfer.Transfer;
 
 public class ApplicationController {
@@ -36,6 +40,8 @@ public class ApplicationController {
     private ChangeListener<Number> resizeListenerMV;
     
     private static int MAX_NUMBER_OF_VARIANTS = 4;
+    
+    private Stage m_stage;
     
     @FXML
     private TabPane rdbTabPane;
@@ -53,28 +59,16 @@ public class ApplicationController {
 	private Button btn_Export;
     
     @FXML
-    private void initialize() {
-        String dbName = "sakila".toUpperCase();
-        MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
-        Pane pane = addNewTab(dbName, rdbTabPane);
-        m_rdbEditor = new RDBEditor(pane);
-        try
-        {
-            m_rdbEditor.setStructure(new RDBStructure(client.getTables(), client.getRelations()));
-        }
-        catch (ProviderException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
+    private void initialize() {        
 
         resizeListenerDB = new ChangeListener<Number>()
         {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
             {
-                m_rdbEditor.relayout(newValue.doubleValue());
+                if (m_rdbEditor != null){
+                    m_rdbEditor.relayout(newValue.doubleValue());
+                }
             }
         };
         rdbTabPane.widthProperty().addListener(resizeListenerDB);
@@ -95,8 +89,29 @@ public class ApplicationController {
         mvTabPane.heightProperty().addListener(resizeListenerMV);
     }
     
-    public void showTables(){
-        m_rdbEditor.relayout(rdbTabPane.getWidth());
+    public void setStage(Stage stage){
+        this.m_stage = stage;
+    }
+    
+    public void showTables() throws ProviderException{
+        String dbName = "sakila".toUpperCase();
+        final MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
+        
+        final List<RDBTable> tabels = client.getTables();
+        final List<RDBRelation> relations = client.getRelations();
+        
+        Platform.runLater(new Runnable()
+        {   
+            @Override
+            public void run()
+            {
+                Pane pane = addNewTab(dbName, rdbTabPane);
+                m_rdbEditor = new RDBEditor(pane);
+                m_rdbEditor.setStructure(new RDBStructure(tabels, relations));
+                m_rdbEditor.layout();
+                m_rdbEditor.relayout(rdbTabPane.getWidth());
+            }
+        });
     }
     
     private Pane addNewTab(String name, TabPane tab){
@@ -160,24 +175,42 @@ public class ApplicationController {
     
     @FXML
     private void onActionMigrate(ActionEvent e){
-        RDBStructure structure = m_rdbEditor.getStructure();
-        List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
-        m_mvEditors.clear();
-        mvTabPane.getTabs().clear();
-        for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){
-            Set<Transfer> variant = transformations.get(i);
-            List<MVFile> files = new ArrayList<MVFile>();
-            for (Transfer transfer : variant){
-                files.add(transfer.constructMVFile());
+        Task<Void> task = new Task<Void>()
+        {
+            @Override
+            protected Void call()
+                throws Exception
+            {
+                RDBStructure structure = m_rdbEditor.getStructure();
+                List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
+                
+                Platform.runLater(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        m_mvEditors.clear();
+                        mvTabPane.getTabs().clear();
+                        for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){
+                            Set<Transfer> variant = transformations.get(i);
+                            List<MVFile> files = new ArrayList<MVFile>();
+                            for (Transfer transfer : variant){
+                                files.add(transfer.constructMVFile());
+                            }
+                            Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane);
+                            MVEditor editor = new MVEditor(pane);
+                            editor.setData(files);
+                            m_mvEditors.add(editor);
+                            editor.layout();
+                        }
+                        for (MVEditor editor : m_mvEditors){
+                            editor.relayout(mvTabPane.getWidth());
+                        }
+                    }
+                });
+                return null;
             }
-            Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane);
-            MVEditor editor = new MVEditor(pane);
-            editor.setData(files);
-            m_mvEditors.add(editor);
-            editor.layout();
-        }
-        for (MVEditor editor : m_mvEditors){
-            editor.relayout(mvTabPane.getWidth());
-        }
+        };
+        ProgressForm.showProgress(task, m_stage);
     }
 }

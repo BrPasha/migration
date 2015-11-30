@@ -34,6 +34,7 @@ public class MVEditor
         m_files = files;
         for (MVFile file : files){
             FileNode node = createFile(file);
+            node.layout();
             m_pane.getChildren().add(node);
         }
     }
