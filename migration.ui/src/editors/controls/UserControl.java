@@ -64,6 +64,12 @@ public abstract class UserControl extends Region {
     }
     
     private void init(){
+        this.setOnMouseEntered(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent e) {
+                UserControl.this.toFront();
+            }
+        });
+        
         this.setOnMouseClicked(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
                 e.consume();
