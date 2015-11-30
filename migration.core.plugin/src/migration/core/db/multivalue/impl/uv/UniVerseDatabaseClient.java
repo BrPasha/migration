@@ -15,6 +15,7 @@ import asjava.uniobjects.UniSubroutine;
 import migration.core.db.multivalue.IMVDatabaseClient;
 import migration.core.db.multivalue.IMVResultSet;
 import migration.core.db.multivalue.MVProviderException;
+import migration.core.db.relational.ProviderException;
 import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
 
@@ -180,12 +181,14 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			try {
 				UniDataSet dataSet = session.dataSet();
 				while (rs.next()) {
-					dataSet.append(rs.id(), rs.row());
+					dataSet.append(rs.recordId(), rs.record());
 				}
 				file.write(dataSet);
 			} finally {
 				file.close();
 			}
+		} catch (ProviderException ex) {
+			throw new MVProviderException(ex);
 		} catch (UniException ex) {
 			throw new MVProviderException(ex);
 		}
