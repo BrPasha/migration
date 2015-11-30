@@ -46,7 +46,7 @@
             					<Font name="Trebuchet MS" size="14.0" style="bold" />
           					</font>
         				</Button>
-        				<Button fx:id="btn_Settings" prefHeight="0.0" prefWidth="36.0" styleClass="button-settings" BorderPane.alignment="CENTER_RIGHT"
+        				<Button fx:id="btn_Settings" prefHeight="35.0" prefWidth="36.0" styleClass="button-settings" BorderPane.alignment="CENTER_RIGHT"
       						contentDisplay="RIGHT" mnemonicParsing="false" 
       						translateX="-20.0" onMouseClicked="#btn_Settings_clicked" >
         				</Button>
