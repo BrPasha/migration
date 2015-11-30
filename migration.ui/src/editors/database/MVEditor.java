@@ -42,14 +42,14 @@ public class MVEditor
         return m_files;
     }
     
-    public void relayout(){
+    public void relayout(double width){
         double x = SPACE;
         double y = SPACE;
         double maxHeight = 0;
         
         for (Node node: m_pane.getChildren()){
             if (node instanceof Region){
-                if (x > m_pane.getWidth()){
+                if (x > width){
                     x = SPACE;
                     y = y + maxHeight + SPACE;
                     maxHeight = 0;
@@ -68,6 +68,10 @@ public class MVEditor
         FileNode control = new FileNode(model);
         control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
         return control;
+    }
+    
+    public void layout(){
+        m_pane.layout();
     }
 }
 

@@ -20,7 +20,7 @@ public class RDBEditor
 {
     private static final double SPACE = 10;
     
-    private Pane m_pane;
+    private Pane m_pane; 
     private RDBStructure m_structure;
     
     public RDBEditor(Pane pane)
@@ -41,14 +41,14 @@ public class RDBEditor
         return m_structure;
     }
     
-    public void relayout(){
+    public void relayout(double width){
         double x = SPACE;
         double y = SPACE;
         double maxHeight = 0;
         
         for (Node node: m_pane.getChildren()){
             if (node instanceof Region){
-                if (x > m_pane.getWidth()){
+                if (x > width){
                     x = SPACE;
                     y = y + maxHeight + SPACE;
                     maxHeight = 0;

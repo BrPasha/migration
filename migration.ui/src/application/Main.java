@@ -17,7 +17,7 @@ public class Main extends Application {
 		try { 
 		    
 	        FXMLLoader loader = new FXMLLoader();
-	        ApplicationController controller = new ApplicationController();
+	        final ApplicationController controller = new ApplicationController();
 	        loader.setController(controller);
 	        loader.setLocation(getClass().getResource("Application.fxml"));
 			BorderPane root = (BorderPane)loader.load();

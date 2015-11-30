@@ -6,6 +6,8 @@ import java.util.Set;
 
 import editors.database.MVEditor;
 import editors.database.RDBEditor;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -29,6 +31,10 @@ public class ApplicationController {
     private RDBEditor m_rdbEditor;
     private List<MVEditor> m_mvEditors = new ArrayList<MVEditor>();
     
+    private ChangeListener<Number> resizeListenerDB;
+    
+    private ChangeListener<Number> resizeListenerMV;
+    
     private static int MAX_NUMBER_OF_VARIANTS = 4;
     
     @FXML
@@ -49,7 +55,7 @@ public class ApplicationController {
     @FXML
     private void initialize() {
         String dbName = "sakila".toUpperCase();
-        MySqlDatabaseClient client = new MySqlDatabaseClient("che-l-im01", 3306, dbName, "mysql", "mysql");
+        MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
         Pane pane = addNewTab(dbName, rdbTabPane);
         m_rdbEditor = new RDBEditor(pane);
         try
@@ -61,10 +67,36 @@ public class ApplicationController {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+
+        resizeListenerDB = new ChangeListener<Number>()
+        {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+            {
+                m_rdbEditor.relayout(newValue.doubleValue());
+            }
+        };
+        rdbTabPane.widthProperty().addListener(resizeListenerDB);
+        rdbTabPane.heightProperty().addListener(resizeListenerDB);
+        
+        resizeListenerMV = new ChangeListener<Number>()
+        {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+            {
+                for(MVEditor editor : m_mvEditors){
+                    editor.relayout(newValue.doubleValue());
+                }
+            }
+        };
+        
+        mvTabPane.widthProperty().addListener(resizeListenerMV);
+        mvTabPane.heightProperty().addListener(resizeListenerMV);
     }
     
     public void showTables(){
-        m_rdbEditor.relayout();
+        m_rdbEditor.relayout(rdbTabPane.getWidth());
     }
     
     private Pane addNewTab(String name, TabPane tab){
@@ -83,6 +115,8 @@ public class ApplicationController {
             
             AnchorPane aPane1 = new AnchorPane();
             scrollPane.setContent(aPane1);
+            
+            scrollPane.setStyle("-fx-background:#0A2447; -fx-border-color:#0A2447");
             
             Pane pane = new Pane();
             aPane1.getChildren().add(pane);
@@ -140,10 +174,10 @@ public class ApplicationController {
             MVEditor editor = new MVEditor(pane);
             editor.setData(files);
             m_mvEditors.add(editor);
+            editor.layout();
         }
         for (MVEditor editor : m_mvEditors){
-            editor.relayout();
+            editor.relayout(mvTabPane.getWidth());
         }
     }
-    
 }
