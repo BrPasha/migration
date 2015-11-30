@@ -3,6 +3,7 @@ package migration.core.db.relational;
 import static migration.core.util.Pair.pair;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -212,4 +213,14 @@ public abstract class AbstractDatabaseClient implements IDatabaseClient {
 		return foreignKeys;
 	}
 
+	@Override
+	public ResultSet executeQuery(String sql) throws ProviderException {
+		try {
+			Connection conn = openConnection();
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			return new ConnectionHoldingResultSet(stmt.executeQuery(), stmt, conn);
+		} catch (SQLException ex) {
+			throw new ProviderException(ex);
+		}
+	}
 }
