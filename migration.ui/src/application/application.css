@@ -5,10 +5,10 @@
 
 .button-info{
 	-fx-background-color: -fx-main-background; 
-	-fx-background-radius: 15;
+	-fx-background-radius: 25;
 	-fx-border-color: white; 
 	-fx-border-width: 2;
-	-fx-border-radius: 15;
+	-fx-border-radius: 25;
 	-fx-text-fill: white;
 }
 
@@ -18,14 +18,17 @@
 
 .button-settings{
 	-fx-background-color: -fx-main-background; 
-	-fx-background-radius: 15;
+	-fx-background-radius: 25;
 	-fx-border-color: white; 
 	-fx-border-width: 2;
-	-fx-border-radius: 15;
+	-fx-border-radius: 25;
 	-fx-text-fill: white;
+	
+	
 	-fx-background-image: url("../../icon/settings.png");  
 	-fx-background-size: 35,35;
 	-fx-background-position: center;
+	/* */
 }
 
 .button-settings:hover{
