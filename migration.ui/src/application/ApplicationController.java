@@ -44,6 +44,8 @@ public class ApplicationController {
     
     private Stage m_stage;
     
+    private DatabasesSettings dbSettings = new DatabasesSettings();
+    
     @FXML
     private TabPane rdbTabPane;
     
@@ -58,20 +60,16 @@ public class ApplicationController {
 	
 	@FXML
 	private Button btn_Export;
-    
-    @FXML
-    private void initialize() {        
 
-
-    }
     
     public void setStage(Stage stage){
         this.m_stage = stage;
     }
     
     public void showTables() throws ProviderException{
-        String dbName = "sakila".toUpperCase();
-        final MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
+        String dbName = dbSettings.getRDBName();
+        final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
+        		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
         
         final List<RDBTable> tabels = client.getTables();
         final List<RDBRelation> relations = client.getRelations();

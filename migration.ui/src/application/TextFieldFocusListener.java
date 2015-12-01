@@ -14,6 +14,7 @@ public class TextFieldFocusListener implements ChangeListener<Boolean>{
 	TextFieldFocusListener(TextField textField, String defaultText) {
         this.textField = textField ;
         this.default_txt = defaultText;
+        this.textField.setStyle(value_style);
       }
 	
 	@Override

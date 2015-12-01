@@ -12,8 +12,6 @@ import javafx.stage.Stage;
 
 public class SettingsController implements Initializable  {
 	
-	private final Integer DEFAULT_U2_PORT = 31438;
-	private final String value_style = "-fx-text-fill: white;-fx-font-style: normal;-fx-prompt-text-fill: white";
 	private final String DEFAULT_HOST_TEXT = "Type database host ...";
 	private final String DEFAULT_PORT_TEXT = "Type port ...";
 	private final String DEFAULT_MV_ACCOUNT_TEXT = "Specify account name ...";
@@ -21,6 +19,8 @@ public class SettingsController implements Initializable  {
 	
 	private final String DEFAULT_USERNAME_TEXT = "Username ...";
 	private final String DEFAULT_PSWD_TEXT = "Password ...";
+	
+	private DatabasesSettings dbSettings = new DatabasesSettings();
 	
 	@FXML
 	private Button btn_OK;
@@ -52,12 +52,7 @@ public class SettingsController implements Initializable  {
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		btn_OK.disableProperty().set(true);
-
-		txt_mv_port.setText(DEFAULT_U2_PORT.toString());
-		txt_mv_port.setStyle(value_style);
-		
-		setDefaultValuesForTexts();
+		initializeDefaultValues();
 		
 		setFocusListeners();
 	}
@@ -70,13 +65,38 @@ public class SettingsController implements Initializable  {
 	
 	@FXML
 	private void btn_OkClicked(){
-		// Verify that fields are filled with correct values
-		// Save the settings
+		// Verify that fields are filled with correct values		
 		
+		// Save the settings
+		dbSettings.setRDBName(txt_r_dbname.getText());
+		dbSettings.setRHost(txt_r_host.getText());
+		dbSettings.setRPort(Integer.parseInt(txt_r_port.getText()));
+		dbSettings.setRUser(txt_r_user.getText());
+		dbSettings.setRPsw(txt_r_pswd.getText());
+		
+		dbSettings.setMVHost(txt_mv_host.getText());
+		dbSettings.setMVAccount(txt_mv_account.getText());
+		dbSettings.setMVPort(Integer.parseInt(txt_mv_port.getText()));
+		dbSettings.setMVUser(txt_mv_user.getText());
+		dbSettings.setMVPsw(txt_mv_pswd.getText());
 		
 		// TODO: переделать
 		Stage stage = (Stage)btn_OK.getScene().getWindow();
 		stage.close();
+	}
+	
+	private void initializeDefaultValues(){
+		txt_r_host.setText(dbSettings.getRHost());
+		txt_r_port.setText(dbSettings.getRPort().toString());
+		txt_r_dbname.setText(dbSettings.getRDBName());
+		txt_r_user.setText(dbSettings.getRUser());
+		txt_r_pswd.setText(dbSettings.getRPsw());
+		
+		txt_mv_host.setText(dbSettings.getMVHost());
+		txt_mv_port.setText(dbSettings.getMVPort().toString());
+		txt_mv_account.setText(dbSettings.getMVAccount());
+		txt_mv_user.setText(dbSettings.getMVUser());
+		txt_mv_pswd.setText(dbSettings.getMVPsw());
 	}
 	
 	private void setDefaultValuesForTexts(){
