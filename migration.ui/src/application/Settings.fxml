@@ -82,9 +82,11 @@
                   				<TextField fx:id="txt_r_dbname" styleClass="text-relational" translateY="140"
                   					onKeyTyped="#txt_keyTyped">
                   				</TextField>
+                  				<!-- 
                   				<Label text="Schema:" styleClass="label-relational" translateY="175" ></Label>
                   				<ComboBox styleClass="text-relational" translateY="195">
                   				</ComboBox>
+                  				 -->
                   				<Label text="Enter database user name and password:" styleClass="label-relational" translateY="280" ></Label>
                   				<TextField fx:id="txt_r_user" styleClass="text-relational" translateY="305"
                   					onKeyTyped="#txt_keyTyped">
