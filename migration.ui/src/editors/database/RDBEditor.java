@@ -42,7 +42,6 @@ public class RDBEditor
     }
     
     public void relayout(double width){
-        System.out.println("layout");
         double x = SPACE;
         double y = SPACE;
         double maxHeight = 0;
