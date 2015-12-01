@@ -18,6 +18,7 @@ import migration.core.db.multivalue.MVProviderException;
 import migration.core.db.relational.ProviderException;
 import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
+import migration.core.model.transfer.Record;
 
 public class UniVerseDatabaseClient implements IMVDatabaseClient {
 
@@ -180,8 +181,9 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			UniFile file = session.openFile(fileName);
 			try {
 				UniDataSet dataSet = session.dataSet();
-				while (rs.next()) {
-					dataSet.append(rs.recordId(), rs.record());
+				Record record = null;
+				while ((record = rs.nextRecord()) != null) {
+					dataSet.append(record.getId(), record.getData());
 				}
 				file.write(dataSet);
 			} finally {
