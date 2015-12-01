@@ -132,15 +132,15 @@ public class SettingsController implements Initializable  {
 	
 	@FXML
 	private void txt_keyTyped(){
-		if ( !txt_mv_host.getText().equals(DEFAULT_HOST_TEXT) 
-				&& !txt_mv_account.getText().equals(DEFAULT_MV_ACCOUNT_TEXT) 
-				&& !txt_mv_port.getText().equals(DEFAULT_PORT_TEXT)
-				&& !txt_mv_user.getText().equals(DEFAULT_USERNAME_TEXT) 
-				&& !txt_mv_pswd.getText().isEmpty()
-				&& !txt_r_host.getText().equals(DEFAULT_HOST_TEXT)
-				&& !txt_r_port.getText().equals(DEFAULT_PORT_TEXT)
-				&& !txt_r_dbname.getText().equals(DEFAULT_R_DBNAME_TEXT)
-				&& !txt_r_user.getText().equals(DEFAULT_USERNAME_TEXT) 
+		if ( !txt_mv_host.getText().equals(DEFAULT_HOST_TEXT) && !txt_mv_host.getText().isEmpty()
+				&& !txt_mv_account.getText().equals(DEFAULT_MV_ACCOUNT_TEXT) && !txt_mv_account.getText().isEmpty()
+				&& !txt_mv_port.getText().equals(DEFAULT_PORT_TEXT) && !txt_mv_port.getText().isEmpty()
+				&& !txt_mv_user.getText().equals(DEFAULT_USERNAME_TEXT) && !txt_mv_user.getText().isEmpty()
+				&& !txt_mv_pswd.getText().isEmpty() 
+				&& !txt_r_host.getText().equals(DEFAULT_HOST_TEXT) && !txt_r_host.getText().isEmpty()
+				&& !txt_r_port.getText().equals(DEFAULT_PORT_TEXT) && !txt_r_port.getText().isEmpty()
+				&& !txt_r_dbname.getText().equals(DEFAULT_R_DBNAME_TEXT) && !txt_r_dbname.getText().isEmpty()
+				&& !txt_r_user.getText().equals(DEFAULT_USERNAME_TEXT) && !txt_r_user.getText().isEmpty() 
 				&& !txt_r_pswd.getText().isEmpty()
 				) 
 			btn_OK.disableProperty().set(false);

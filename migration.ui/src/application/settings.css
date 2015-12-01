@@ -1,6 +1,7 @@
 /* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
 *{
    -fx-main-background: #0B2D5A;
+   -fx-buttonhover-background: #0099FF;
 }
 
 .tab{
@@ -93,7 +94,7 @@
 }
 */
 .button-cancel:hover{
-	-fx-background-color: #092447;
+	-fx-background-color: -fx-buttonhover-background;
 }
 
 .tab-label{
