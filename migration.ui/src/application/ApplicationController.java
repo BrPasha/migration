@@ -112,8 +112,9 @@ public class ApplicationController {
     }
     
     public void showTables() throws ProviderException{
-        String dbName = "sakila".toUpperCase();
-        final MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
+        String dbName = dbSettings.getRDBName();
+        final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
+        		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
         
         final List<RDBTable> tabels = client.getTables();
         final List<RDBRelation> relations = client.getRelations();
