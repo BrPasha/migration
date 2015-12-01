@@ -50,6 +50,12 @@ public class SettingsController implements Initializable  {
 	@FXML
 	private PasswordField txt_r_pswd;
 	
+	private Stage m_stage;
+	
+	public void setStage(Stage stage){
+        this.m_stage = stage;
+    }
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		initializeDefaultValues();
@@ -58,9 +64,8 @@ public class SettingsController implements Initializable  {
 	}
 	
 	@FXML
-	private void btn_CancelClicked(){		
-		Stage stage = (Stage)btn_OK.getScene().getWindow();
-		stage.close();
+	private void btn_CancelClicked(){
+		m_stage.close();
 	}	
 	
 	@FXML
@@ -80,9 +85,7 @@ public class SettingsController implements Initializable  {
 		dbSettings.setMVUser(txt_mv_user.getText());
 		dbSettings.setMVPsw(txt_mv_pswd.getText());
 		
-		// TODO: переделать
-		Stage stage = (Stage)btn_OK.getScene().getWindow();
-		stage.close();
+		m_stage.close();
 	}
 	
 	private void initializeDefaultValues(){

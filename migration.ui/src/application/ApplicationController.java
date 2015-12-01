@@ -22,6 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import migration.core.db.relational.ProviderException;
 import migration.core.db.relational.impl.mysql.MySqlDatabaseClient;
@@ -90,13 +91,14 @@ public class ApplicationController {
                         }
                     }
                 };
-                Pane pane = addNewTab(dbName, rdbTabPane, resizeListenerDB);
+                Pane pane = addNewTab("DATABASE NAME: " + dbName, rdbTabPane, resizeListenerDB);
                 m_rdbEditor = new RDBEditor(pane);
                 m_rdbEditor.setStructure(new RDBStructure(tabels, relations));
                 m_rdbEditor.layout();
                 m_rdbEditor.relayout(rdbTabPane.getWidth());
             }
         });
+        
     }
     
     private Pane addNewTab(String name, TabPane tab, ChangeListener<Number> listener){
@@ -147,6 +149,9 @@ public class ApplicationController {
 			stage.setResizable(false);
 			stage.setTitle("Settings");
 			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
+			stage.initModality(Modality.WINDOW_MODAL);
+			stage.initOwner(m_stage);
+			((SettingsController)fxmlLoader.getController()).setStage(stage);
 			stage.show();
 			
 			/*
@@ -197,7 +202,7 @@ public class ApplicationController {
                                     }
                                 }
                             };
-                            Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane, resizeListenerMV);
+                            Pane pane = addNewTab("VARIANT " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
                             MVEditor editor = new MVEditor(pane);
                             editor.setData(files);
                             m_mvEditors.add(editor);
