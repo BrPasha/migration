@@ -93,7 +93,7 @@ public class Transfer {
 		Collection<List<RDBTable>> permutations = Collections2.permutations(structure.getTables());
 		int count = 0;
 		for (List<RDBTable> tables : permutations) {
-			if (count++ > 200) {
+			if (count++ > 2) {
 				break;
 			}
 			LinkedList<RDBTable> remainingTables = new LinkedList<>(tables);
