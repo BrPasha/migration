@@ -26,7 +26,7 @@ public class ProgressForm
 
     public ProgressForm(Stage parentStage) {
         dialogStage = new Stage();
-        dialogStage.initOwner(parentStage);
+        //dialogStage.initOwner(parentStage);
         dialogStage.initStyle(StageStyle.TRANSPARENT);
         dialogStage.setResizable(false);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
