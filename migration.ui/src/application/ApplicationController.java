@@ -22,6 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import migration.core.db.relational.ProviderException;
 import migration.core.db.relational.impl.mysql.MySqlDatabaseClient;
@@ -147,6 +148,8 @@ public class ApplicationController {
 			stage.setResizable(false);
 			stage.setTitle("Settings");
 			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
+			stage.initModality(Modality.WINDOW_MODAL);
+			stage.initOwner(m_stage.getScene().getWindow());;
 			stage.show();
 			
 			/*
