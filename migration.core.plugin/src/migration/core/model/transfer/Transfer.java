@@ -218,7 +218,9 @@ public class Transfer {
 					column.getName(), 
 					format, 
 					MVColumnDepth.singlevalue.value(), 
-					"");
+					"",
+					m_baseTable.getName(),
+					column.getName());
 			mvFields.add(mvField);
 		}
 		for (RDBTable embeddedTable : m_embeddedTables) {
@@ -239,7 +241,9 @@ public class Transfer {
 							column.getName(), 
 							format, 
 							depth.value(), 
-							associationName);
+							associationName,
+							embeddedTable.getName(),
+							column.getName());
 					mvFields.add(mvField);
 					addedColumnNames.add(columnUniqueName);
 				}
@@ -254,6 +258,8 @@ public class Transfer {
 						"", 
 						"", 
 						"", 
+						"",
+						"",
 						"");
 				mvFields.add(mvField);
 			}

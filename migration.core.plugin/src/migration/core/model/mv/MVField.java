@@ -11,10 +11,14 @@ public class MVField {
 	private String m_convCode;
 	private String m_format;
 	
+	private String m_sourceTable;
+	private String m_sourceColumn;
+	
 	public MVField() {
 	}
 	
-	public MVField(String name, String type, String location, String def, String convCode, String heading, String format, String depth, String assoc) {
+	public MVField(String name, String type, String location, String def, String convCode, String heading,
+			String format, String depth, String assoc, String sourceTable, String sourceColumn) {
 		m_name = name;
 		m_convCode = convCode;
 		m_heading = heading;
@@ -24,6 +28,8 @@ public class MVField {
 		m_location = location;
 		m_def = def;
 		m_assoc = assoc;
+		m_sourceTable = sourceTable;
+		m_sourceColumn = sourceColumn;
 	}
 	
 	public String getAssoc() {
@@ -96,6 +102,14 @@ public class MVField {
 	
 	public void setFormat(String format) {
 		m_format = format;
+	}
+	
+	public String getSourceTable() {
+		return m_sourceTable;
+	}
+	
+	public String getSourceColumn() {
+		return m_sourceColumn;
 	}
 
 	@Override

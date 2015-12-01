@@ -18,9 +18,9 @@ public class UniVerseDatabaseClientTest {
 //			ex.printStackTrace();
 //		}
 		client.createAccount("TESTACC");
-		MVField field1 = new MVField("FIELD1", "D", "1", "", "", "Field 1", "10L", "S", "");
-		MVField field2 = new MVField("FIELD2", "D", "2", "", "", "Field 2", "20L", "S", "");
-		MVField field3 = new MVField("FIELD3", "D", "3", "", "", "Field 3", "30L", "S", "");
+		MVField field1 = new MVField("FIELD1", "D", "1", "", "", "Field 1", "10L", "S", "", "", "");
+		MVField field2 = new MVField("FIELD2", "D", "2", "", "", "Field 2", "20L", "S", "", "", "");
+		MVField field3 = new MVField("FIELD3", "D", "3", "", "", "Field 3", "30L", "S", "", "", "");
 		client.createFile("TESTACC", new MVFile("TESTFILE", Arrays.asList(field1, field2, field3)));
 		
 		System.out.println();
