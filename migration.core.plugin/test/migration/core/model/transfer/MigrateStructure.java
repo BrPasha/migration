@@ -1,5 +1,6 @@
 package migration.core.model.transfer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -28,9 +29,13 @@ public class MigrateStructure {
 		u2Client.createAccount("TESTACC");
 		
 		Set<Transfer> transformation1 = transformations.get(0);
-		for (Transfer transfer : transformation1) {
-			MVFile mvFile = transfer.constructMVFile();
+		Plan plan = new Plan(new ArrayList<>(transformation1), client);
+		while (plan.next()) {
+			MVFile mvFile = plan.getStructure();
 			u2Client.createFile("TESTACC", mvFile);
+			try (Data data = plan.getData()) {
+				u2Client.exportData("TESTACC", mvFile.getName(), data);
+			}
 		}
 	}
 	

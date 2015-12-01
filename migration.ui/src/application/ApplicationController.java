@@ -18,6 +18,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -158,6 +159,7 @@ public class ApplicationController {
 			stage.setScene(scene);
 			stage.setResizable(false);
 			stage.setTitle("Settings");
+			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			stage.show();
 			
 			/*

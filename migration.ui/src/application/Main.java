@@ -26,11 +26,9 @@ public class Main extends Application {
 			
 			primaryStage.setScene(scene);
 			primaryStage.setTitle("Migration Tool");
-			primaryStage.getIcons().add(new Image("file:icon/Rocket25.png"));
-			
+			primaryStage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			primaryStage.show();
-			//primaryStage.setFullScreen(true);
-			
+
 			Task<Void> task = new Task<Void>()
             {
                 @Override
@@ -42,9 +40,7 @@ public class Main extends Application {
                 }
             };
             ProgressForm.showProgress(task, primaryStage);
-            
-            
-			
+
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

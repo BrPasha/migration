@@ -1,27 +1,28 @@
 /* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
 *{
    -fx-main-background: #0B2D5A;
+   -fx-buttonhover-background: #0099FF;
 }
 
 .button-info{
 	-fx-background-color: -fx-main-background; 
-	-fx-background-radius: 15;
+	-fx-background-radius: 25;
 	-fx-border-color: white; 
 	-fx-border-width: 2;
-	-fx-border-radius: 15;
+	-fx-border-radius: 25;
 	-fx-text-fill: white;
 }
 
 .button-info:hover{
-	-fx-background-color: #092447; 
+	-fx-background-color: -fx-buttonhover-background; 
 }
 
 .button-settings{
 	-fx-background-color: -fx-main-background; 
-	-fx-background-radius: 15;
+	-fx-background-radius: 25;
 	-fx-border-color: white; 
 	-fx-border-width: 2;
-	-fx-border-radius: 15;
+	-fx-border-radius: 25;
 	-fx-text-fill: white;
 	-fx-background-image: url("../../icon/settings.png");  
 	-fx-background-size: 35,35;
@@ -29,7 +30,7 @@
 }
 
 .button-settings:hover{
-	-fx-background-color: #092447; 
+	-fx-background-color: -fx-buttonhover-background; 
 }
 
 .button-export{
@@ -42,7 +43,7 @@
 }
 
 .button-export:hover{
-	-fx-background-color: #092447;
+	-fx-background-color: -fx-buttonhover-background; 
 }
 
 .background-default{
@@ -92,7 +93,7 @@
 }
 
 .tab-database .tab:selected{
-	-fx-background-color: #0099FF;
+	-fx-background-color: -fx-buttonhover-background;
 	-fx-border-width: 0;
 	-fx-background-insets: 0 0 -1 0;
 }

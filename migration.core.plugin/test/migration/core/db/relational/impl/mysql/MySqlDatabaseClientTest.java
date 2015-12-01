@@ -18,7 +18,7 @@ public class MySqlDatabaseClientTest {
 
 	@BeforeClass
 	public static void initClient() {
-		client = new MySqlDatabaseClient("localhost", 3306, "sakila", "mysql", "mysql");
+		client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, "sakila", "root", "admin");
 	}
 	
 //	@Test
