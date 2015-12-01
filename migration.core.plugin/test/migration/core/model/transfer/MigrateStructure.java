@@ -24,7 +24,7 @@ public class MigrateStructure {
 		RDBStructure structure = new RDBStructure(tables, relations);
 		
 		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
-		
+		System.out.println(Transfer.getWeight(transformations.get(0), structure));
 		UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient("localhost", 31438, "u2user", "!u2password");
 		u2Client.createAccount("TESTACC");
 		

@@ -88,10 +88,12 @@ public class Transfer {
 	
 	public static List<Set<Transfer>> proposeTransformations(RDBStructure structure) {
 		List<Set<Transfer>> transformations = new ArrayList<>();
+		List<RDBTable> sourceTables = new ArrayList<>(structure.getTables());
+		sourceTables.sort((t1, t2) -> (int)(countRelations(t2, structure.getRelations()) - countRelations(t1, structure.getRelations())));
 		Collection<List<RDBTable>> permutations = Collections2.permutations(structure.getTables());
 		int count = 0;
 		for (List<RDBTable> tables : permutations) {
-			if (count++ > 2) {
+			if (count++ > 200) {
 				break;
 			}
 			LinkedList<RDBTable> remainingTables = new LinkedList<>(tables);
@@ -107,7 +109,11 @@ public class Transfer {
 		return new ArrayList<>(orderedStructures);
 	}
 	
-	private static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
+	private static long countRelations(RDBTable table, List<RDBRelation> relations) {
+		return relations.stream().filter(r -> r.getTable1().equals(table.getName()) || r.getTable2().equals(table.getName())).count();
+	}
+	
+	public static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
 		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 	
