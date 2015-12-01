@@ -15,6 +15,7 @@ public class PasswordFieldFocusListener implements ChangeListener<Boolean>{
 	PasswordFieldFocusListener(TextField textField, String defaultText){
 		this.textField = textField ;
         this.default_txt = defaultText;
+        this.textField.setStyle(value_style);
 	}
 	
 	@Override

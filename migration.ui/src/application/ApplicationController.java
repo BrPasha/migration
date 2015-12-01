@@ -44,6 +44,8 @@ public class ApplicationController {
     
     private Stage m_stage;
     
+    private DatabasesSettings dbSettings = new DatabasesSettings();
+    
     @FXML
     private TabPane rdbTabPane;
     
@@ -58,45 +60,16 @@ public class ApplicationController {
 	
 	@FXML
 	private Button btn_Export;
-    
-    @FXML
-    private void initialize() {        
 
-        resizeListenerDB = new ChangeListener<Number>()
-        {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
-                if (m_rdbEditor != null){
-                    m_rdbEditor.relayout(newValue.doubleValue());
-                }
-            }
-        };
-        rdbTabPane.widthProperty().addListener(resizeListenerDB);
-        rdbTabPane.heightProperty().addListener(resizeListenerDB);
-        
-        resizeListenerMV = new ChangeListener<Number>()
-        {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-            {
-                for(MVEditor editor : m_mvEditors){
-                    editor.relayout(newValue.doubleValue());
-                }
-            }
-        };
-        
-        mvTabPane.widthProperty().addListener(resizeListenerMV);
-        mvTabPane.heightProperty().addListener(resizeListenerMV);
-    }
     
     public void setStage(Stage stage){
         this.m_stage = stage;
     }
     
     public void showTables() throws ProviderException{
-        String dbName = "sakila".toUpperCase();
-        final MySqlDatabaseClient client = new MySqlDatabaseClient("wal-vm-sql2mv", 3306, dbName, "root", "admin");
+        String dbName = dbSettings.getRDBName();
+        final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
+        		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
         
         final List<RDBTable> tabels = client.getTables();
         final List<RDBRelation> relations = client.getRelations();
@@ -106,7 +79,18 @@ public class ApplicationController {
             @Override
             public void run()
             {
-                Pane pane = addNewTab(dbName, rdbTabPane);
+                ChangeListener<Number> resizeListenerDB = new ChangeListener<Number>()
+                {
+                    @Override
+                    public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+                    {
+                        if (m_rdbEditor != null){
+                            m_rdbEditor.layout();
+                            m_rdbEditor.relayout(newValue.doubleValue());
+                        }
+                    }
+                };
+                Pane pane = addNewTab(dbName, rdbTabPane, resizeListenerDB);
                 m_rdbEditor = new RDBEditor(pane);
                 m_rdbEditor.setStructure(new RDBStructure(tabels, relations));
                 m_rdbEditor.layout();
@@ -115,11 +99,14 @@ public class ApplicationController {
         });
     }
     
-    private Pane addNewTab(String name, TabPane tab){
+    private Pane addNewTab(String name, TabPane tab, ChangeListener<Number> listener){
         if (tab != null){
             Tab newTab = new Tab(name);
             AnchorPane aPane = new AnchorPane();
             newTab.setContent(aPane);
+            
+            aPane.widthProperty().addListener(listener);
+            aPane.heightProperty().addListener(listener);
             
             ScrollPane scrollPane = new ScrollPane();
             aPane.getChildren().add(scrollPane);
@@ -199,7 +186,18 @@ public class ApplicationController {
                             for (Transfer transfer : variant){
                                 files.add(transfer.constructMVFile());
                             }
-                            Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane);
+                            ChangeListener<Number> resizeListenerMV = new ChangeListener<Number>()
+                            {
+                                @Override
+                                public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+                                {
+                                    for(MVEditor editor:m_mvEditors){
+                                        editor.layout();
+                                        editor.relayout(newValue.doubleValue());
+                                    }
+                                }
+                            };
+                            Pane pane = addNewTab("Variant" + Integer.toString(i+1), mvTabPane, resizeListenerMV);
                             MVEditor editor = new MVEditor(pane);
                             editor.setData(files);
                             m_mvEditors.add(editor);
