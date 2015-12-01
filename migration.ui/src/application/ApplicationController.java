@@ -63,22 +63,6 @@ public class ApplicationController {
     
     @FXML
     private void initialize() {
-        
-    	String dbName = dbSettings.getRDBName();
-        MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
-        		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
-        Pane pane = addNewTab(dbName, rdbTabPane);
-        m_rdbEditor = new RDBEditor(pane);
-        try
-        {
-            m_rdbEditor.setStructure(new RDBStructure(client.getTables(), client.getRelations()));
-        }
-        catch (ProviderException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
         resizeListenerDB = new ChangeListener<Number>()
         {
             @Override

@@ -93,13 +93,4 @@ public class DatabasesSettings {
 	public void setRDBName(String rDBname) {
 		this.rDBname = rDBname;
 	} 
-	
-	/*
-	public boolean allFieldsSpecified(){
-		if (!mv_host.equals(null) && !mv_port.equals(null) && !mv_account.equals(null))
-			return true;
-		else 
-			return false;
-	}
-	*/
 }
