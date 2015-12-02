@@ -42,7 +42,7 @@
       					<Button fx:id="btn_Info" prefHeight="35.0" prefWidth="36.0" styleClass="button-info" BorderPane.alignment="CENTER_RIGHT"
       						contentDisplay="RIGHT" mnemonicParsing="false" 
       						text="i" textAlignment="CENTER" textOverrun="CLIP" 
-      						translateX="25.0" onMouseClicked="#btn_Info_clicked">
+      						translateX="25.0" >
           					<font>
             					<Font name="Trebuchet MS" size="14.0" style="bold" />
           					</font>
@@ -90,7 +90,7 @@
                         <Insets bottom="20.0" left="20.0" right="10.0" top="10.0" />
                      </BorderPane.margin>
                      <center>
-                        <TextArea prefHeight="200.0" prefWidth="200.0" text="Robben, 31, scored with an individual effort after 35 minutes and Arturo Vidal added a second before half-time" wrapText="true" BorderPane.alignment="CENTER" />
+                        <TextArea prefHeight="200.0" prefWidth="200.0" text="" wrapText="true" BorderPane.alignment="CENTER" />
                      </center>
                      <right>
                 		<Button fx:id="btn_Migrate" mnemonicParsing="false" onAction="#onActionMigrate" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="MIGRATE" BorderPane.alignment="CENTER">
@@ -111,7 +111,7 @@
                   </FlowPane>
                </top>
                <center>
-                  <TabPane fx:id="mvTabPane" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+                  <TabPane fx:id="mvTabPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#onTabSelected" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
                         <Insets left="20.0" right="30.0" />
                     </BorderPane.margin>
@@ -120,7 +120,7 @@
                <bottom>
                   <BorderPane prefHeight="70.0" BorderPane.alignment="CENTER">
                      <center>
-                        <TextArea editable="false" prefHeight="200.0" prefWidth="200.0" text="Robben, 31, scored with an individual effort after 35 minutes and Arturo Vidal added a second before half-time" wrapText="true" BorderPane.alignment="CENTER">
+                        <TextArea fx:id="lbl_Factor" editable="false" prefHeight="200.0" prefWidth="200.0" text="" wrapText="true" BorderPane.alignment="CENTER">
                            <BorderPane.margin>
                               <Insets />
                            </BorderPane.margin>
