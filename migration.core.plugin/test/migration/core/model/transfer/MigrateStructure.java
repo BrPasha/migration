@@ -13,6 +13,7 @@ import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
+import migration.core.util.TransferSet;
 
 public class MigrateStructure {
 
@@ -25,8 +26,8 @@ public class MigrateStructure {
 		relations.add(new RDBRelation("film", "film_id", "film_text", "film_id", RDBRelationType.oneToOne));
 		RDBStructure structure = new RDBStructure(tables, relations);
 		
-		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
-		System.out.println(Transfer.getWeight(transformations.get(0), structure));
+		List<TransferSet> transformations = Transfer.proposeTransformations(structure);
+		System.out.println(transformations.get(0).getWeight(structure));
 		UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient("localhost", 31438, "u2user", "!u2password");
 		u2Client.createAccount("TESTACC");
 		

@@ -1,7 +1,6 @@
 package migration.core.db.relational.impl.mysql;
 
 import java.util.List;
-import java.util.Set;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,6 +10,7 @@ import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
 import migration.core.model.transfer.Transfer;
+import migration.core.util.TransferSet;
 
 public class MySqlDatabaseClientTest {
 
@@ -39,7 +39,7 @@ public class MySqlDatabaseClientTest {
 		List<RDBTable> tables = client.getTables();
 		List<RDBRelation> relations = client.getRelations();
 		RDBStructure structure = new RDBStructure(tables, relations);
-		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
+		List<TransferSet> transformations = Transfer.proposeTransformations(structure);
 		System.out.println(transformations.size());
 		
 		transformations.stream().forEach(s -> {

@@ -186,6 +186,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 				Record record = null;
 				int counter = 0;
 				while ((record = rs.nextRecord(session, metadataProvider)) != null) {
+//					System.out.println(fileName + "" + record.getId());
 					dataSet.append(record.getId(), record.getData());
 					if (fileName.equals("customer") && counter++ < 2) {
 						break;
@@ -199,8 +200,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			throw new MVProviderException(ex);
 		} catch (UniException ex) {
 			throw new MVProviderException(ex);
-		}
-		finally {
+		} finally {
 			closeSession(session);
 		}
 	}

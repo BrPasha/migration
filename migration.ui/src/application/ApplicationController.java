@@ -33,6 +33,7 @@ import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
 import migration.core.model.transfer.Transfer;
+import migration.core.util.TransferSet;
 
 public class ApplicationController {
     
@@ -241,7 +242,7 @@ public class ApplicationController {
                 throws Exception
             {
                 RDBStructure structure = m_rdbEditor.getStructure();
-                List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
+                List<TransferSet> transformations = Transfer.proposeTransformations(structure);
                 
                 Platform.runLater(new Runnable()
                 {
