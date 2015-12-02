@@ -15,6 +15,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Collections2;
 
@@ -29,6 +30,9 @@ import migration.core.model.rdb.RDBTable;
 import migration.core.util.Pair;
 
 public class Transfer {
+	public static final String DATE_CONF_CODE = "D4/";
+	public static final String TIME_CONV_CODE = "MTS";
+
 	private int m_hashCode;
 	
 	private RDBTable m_baseTable;
@@ -213,21 +217,55 @@ public class Transfer {
 		int fieldLocation = 1;
 		Set<String> usedColumnNames = new HashSet<>();
 		for (RDBColumn column : m_baseTable.getColumns()) {
-			String convCode = resolveConvCode(column);
-			String format = resolveFormat(column);
-			MVField mvField = new MVField(
-					constructUniqueName(usedColumnNames, column), 
-					"D", 
-					String.valueOf(fieldLocation++), 
-					"", 
-					convCode, 
-					column.getName(), 
-					format, 
-					MVColumnDepth.singlevalue.value(), 
-					"",
-					m_baseTable.getName(),
-					column.getName());
-			mvFields.add(mvField);
+			if (column.getDataType() == Types.TIMESTAMP) {
+				String columnName = constructUniqueName(usedColumnNames, column);
+				String convCode = DATE_CONF_CODE;
+				String format = "";
+				MVField dateField = new MVField(
+						columnName + "_date", 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(dateField);
+				convCode = TIME_CONV_CODE;
+				format = "";
+				MVField timeField = new MVField(
+						columnName + "_time", 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(timeField);
+			} else {
+				String convCode = resolveConvCode(column);
+				String format = resolveFormat(column);
+				MVField mvField = new MVField(
+						constructUniqueName(usedColumnNames, column), 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(mvField);
+			}
 		}
 		for (RDBTable embeddedTable : m_embeddedTables) {
 			MVColumnDepth depth = resolveDepth(embeddedTable);
@@ -235,23 +273,59 @@ public class Transfer {
 			List<String> addedColumnNames = new ArrayList<>();
 			for (RDBColumn column : embeddedTable.getColumns()) {
 				if (needToInclude(column)) {
-					String convCode = resolveConvCode(column);
-					String format = resolveFormat(column);
-					String columnUniqueName = constructUniqueName(usedColumnNames, column);
-					MVField mvField = new MVField(
-							columnUniqueName, 
-							"D", 
-							String.valueOf(fieldLocation++), 
-							"", 
-							convCode, 
-							column.getName(), 
-							format, 
-							depth.value(), 
-							associationName,
-							embeddedTable.getName(),
-							column.getName());
-					mvFields.add(mvField);
-					addedColumnNames.add(columnUniqueName);
+					if (column.getDataType() == Types.TIMESTAMP) {
+						String convCode = DATE_CONF_CODE;
+						String format = "";
+						String columnUniqueName = constructUniqueName(usedColumnNames, column);
+						MVField mvField = new MVField(
+								columnUniqueName + "_date", 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+						convCode = TIME_CONV_CODE;
+						format = "";
+						mvField = new MVField(
+								columnUniqueName + "_time", 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+					} else {
+						String convCode = resolveConvCode(column);
+						String format = resolveFormat(column);
+						String columnUniqueName = constructUniqueName(usedColumnNames, column);
+						MVField mvField = new MVField(
+								columnUniqueName, 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+					}
 				}
 			}
 			if (depth == MVColumnDepth.multivalue) {
@@ -270,7 +344,10 @@ public class Transfer {
 				mvFields.add(mvField);
 			}
 		}
-		return new MVFile(m_baseTable.getName(), mvFields);
+		return new MVFile(m_baseTable.getName(), mvFields,
+				Stream.concat(Stream.of(m_baseTable.getName()), 
+				m_embeddedTables.stream().map(tt -> tt.getName()))
+						.collect(Collectors.toList()));
 	}
 
 	private String constructUniqueName(Set<String> usedColumnNames, RDBColumn column) {
@@ -321,7 +398,6 @@ public class Transfer {
 		case Types.TIME:
 		case Types.DATE:
 		case Types.TIMESTAMP:
-		case Types.TIME_WITH_TIMEZONE:
 		case Types.TIMESTAMP_WITH_TIMEZONE:
 			format = "";
 			break;
@@ -351,20 +427,17 @@ public class Transfer {
 			convCode = "";
 			break;
 		case Types.TIME:
-			convCode = "MTHS";
+			convCode = TIME_CONV_CODE;
 			break;
 		case Types.DATE:
-			convCode = "D4/";
+			convCode = DATE_CONF_CODE;
 			break;
 		case Types.TIMESTAMP:
-		case Types.TIME_WITH_TIMEZONE:
 		case Types.TIMESTAMP_WITH_TIMEZONE:
 			convCode = "";
 			break;
 		case Types.DECIMAL:
 		case Types.NUMERIC:
-			convCode = "MD" + column.getDecimalDigits();
-			break;
 		case Types.DOUBLE:
 		case Types.REAL:
 		case Types.FLOAT:

@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MVFile {
+import migration.core.db.multivalue.IMVMetadataProvider;
+
+public class MVFile implements IMVMetadataProvider {
 	private String m_name;
 	private List<MVField> m_columns = new ArrayList<>();
+	private List<String> m_sourceTables;
 
-	public MVFile(String name, List<MVField> columns) {
+	public MVFile(String name, List<MVField> columns, List<String> sourceTables) {
 		m_name = name;
+		m_sourceTables = sourceTables;
 		m_columns = new ArrayList<>(columns);
 	}
 
@@ -27,6 +31,10 @@ public class MVFile {
 
 	public void setName(String name) {
 		m_name = name;
+	}
+	
+	public List<String> getSourceTables() {
+		return m_sourceTables;
 	}
 
 	@Override
@@ -63,5 +71,15 @@ public class MVFile {
 	@Override
 	public String toString() {
 		return getName();
+	}
+	
+	@Override
+	public MVColumnDepth getDepth(String fieldName) {
+		return MVColumnDepth.resolve(getFields().stream().filter(fld -> fld.getName().equals(fieldName)).findFirst().get().getDepth());
+	}
+	
+	@Override
+	public MVColumnDepth getDepth(int fieldIndex) {
+		return MVColumnDepth.resolve(m_columns.get(fieldIndex).getDepth());
 	}
 }

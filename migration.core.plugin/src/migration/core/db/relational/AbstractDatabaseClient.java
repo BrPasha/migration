@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,6 +88,11 @@ public abstract class AbstractDatabaseClient implements IDatabaseClient {
 				}
 				String autoincrement = rs.getString("IS_AUTOINCREMENT");
 				String generated = rs.getString("IS_GENERATEDCOLUMN");
+				if (typeName.equals("GEOMETRY")
+						|| typeName.equals("BLOB")) {
+					typeName = "BLOB";
+					dataType = Types.BLOB;
+				}
 				RDBColumn column = new RDBColumn(
 						tableCat, 
 						tableSchem, 
@@ -126,7 +132,7 @@ public abstract class AbstractDatabaseClient implements IDatabaseClient {
 				List<RDBForeignKey> foreignKeys = getForeignKeys(connection, table.getName());
 				List<RDBRelation> tableRelations = foreignKeys.stream()
 					.flatMap(key -> key.getFkColumns().stream()
-							.map(p -> new RDBRelation(key.getPkTable(), p.first(), key.getFkTable(), p.second(), RDBRelationType.primaryToForeign)))
+							.map(p -> new RDBRelation(key.getPkTable(), p.second(), key.getFkTable(), p.first(), RDBRelationType.primaryToForeign)))
 					.collect(Collectors.toList());
 				relations.addAll(tableRelations);
 			}

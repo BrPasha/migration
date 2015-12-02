@@ -11,9 +11,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 
 /**
  * <pre>
@@ -67,6 +69,21 @@ public abstract class UserControl extends Region {
         this.setOnMouseEntered(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
                 UserControl.this.toFront();
+                DropShadow shadow = new DropShadow();
+                shadow.setWidth(30);
+                shadow.setHeight(30);
+                //shadow.setRadius(0);
+                shadow.setColor(Color.WHITE);
+                UserControl.this.setEffect(shadow);
+                setSelecting(true);
+            }
+        });
+        
+        this.setOnMouseExited(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent e) {
+                UserControl.this.toFront();
+                UserControl.this.setEffect(null);
+                setSelecting(false);
             }
         });
         
@@ -146,5 +163,9 @@ public abstract class UserControl extends Region {
     }
     
     protected abstract Node getHeaderNode();
+    
+    protected void setSelecting(boolean selected){
+        
+    }
 }
 
