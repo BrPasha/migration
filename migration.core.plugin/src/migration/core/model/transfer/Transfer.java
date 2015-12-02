@@ -24,9 +24,9 @@ import migration.core.model.mv.MVField;
 import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBColumn;
 import migration.core.model.rdb.RDBRelation;
-import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
+import migration.core.util.FixedHashCodeSet;
 import migration.core.util.Pair;
 
 public class Transfer {
@@ -71,16 +71,47 @@ public class Transfer {
 			public Double apply(Double t, RDBTable u) {
 				Double result = t;
 				for (RDBRelation relation : relations) {
-					if ((relation.getTable1().equals(getBaseTable().getName())
-							&& relation.getTable2().equals(u.getName()))) {
-						result = result + 1;
-					} else if ((relation.getTable2().equals(getBaseTable().getName())
-							&& relation.getTable1().equals(u.getName()))) {
-						if (relation.getRelationType() == RDBRelationType.primaryToForeign) {
-							result = result - 0.5;
-						} else {
+					switch (relation.getRelationType()) {
+					case primaryToForeign:
+						if (relation.match(getBaseTable().getName(), u.getName())) {
+							result = result + 1;
+						} else if (relation.match(u.getName(), getBaseTable().getName())) {
+							if (u.getColumns().size() < 3 && u.getColumns().size() < getBaseTable().getColumns().size()) {
+								result = result + 0.5;
+							} else {
+								result = result - 0.5;
+							}
+						}
+						break;
+					case primaryToPrimary:
+						if (relation.match(getBaseTable().getName(), u.getName())
+							|| relation.match(u.getName(), getBaseTable().getName())) {
 							result = result + 1;
 						}
+					case oneToOne:
+						if (relation.match(getBaseTable().getName(), u.getName())
+							|| relation.match(u.getName(), getBaseTable().getName())) {
+							result = result + 2;
+						}
+					case oneToMany:
+						if (relation.match(getBaseTable().getName(), u.getName())) {
+							result = result + 2;
+						} else if (relation.match(u.getName(), getBaseTable().getName())) {
+							result = result - 1;
+						}
+					case manyToOne:
+						if (relation.match(getBaseTable().getName(), u.getName())) {
+							result = result - 1;
+						} else if (relation.match(u.getName(), getBaseTable().getName())) {
+							result = result + 2;
+						}
+					case manyToMany:
+						if (relation.match(getBaseTable().getName(), u.getName())
+							|| relation.match(u.getName(), getBaseTable().getName())) {
+							result = result - 1;
+						}
+					default:
+						break;
 					}
 				}
 				return result;
@@ -103,7 +134,7 @@ public class Transfer {
 			LinkedList<RDBTable> remainingTables = new LinkedList<>(tables);
 			if (!remainingTables.isEmpty()) {
 				RDBTable table = remainingTables.pop();
-				List<Set<Transfer>> transfers = process(structure, table, remainingTables);
+				List<FixedHashCodeSet<Transfer>> transfers = process(structure, table, remainingTables);
 				transformations.addAll(transfers);
 			}
 		}
@@ -121,18 +152,18 @@ public class Transfer {
 		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 	
-	private static List<Set<Transfer>> process(RDBStructure structure, RDBTable table, LinkedList<RDBTable> tables) {
+	private static List<FixedHashCodeSet<Transfer>> process(RDBStructure structure, RDBTable table, LinkedList<RDBTable> tables) {
 		List<RDBTable> related = findRelated(table, tables, structure.getRelations());
-		List<Set<Transfer>> result = new ArrayList<>();
+		List<FixedHashCodeSet<Transfer>> result = new ArrayList<>();
 		if (related.isEmpty()) {
 			Transfer transfer = new Transfer(table, structure);
 			if (!tables.isEmpty()) {
 				LinkedList<RDBTable> remaining = new LinkedList<RDBTable>(tables);
-				List<Set<Transfer>> nextTransfers = process(structure, remaining.pop(), remaining);
+				List<FixedHashCodeSet<Transfer>> nextTransfers = process(structure, remaining.pop(), remaining);
 				nextTransfers.stream().forEach(list -> list.add(transfer));
 				result.addAll(nextTransfers);
 			} else {
-				Set<Transfer> nextTransfers = new HashSet<>();
+				FixedHashCodeSet<Transfer> nextTransfers = new FixedHashCodeSet<>();
 				nextTransfers.add(transfer);
 				result.add(nextTransfers);
 			}
@@ -146,14 +177,14 @@ public class Transfer {
 					})
 					.collect(Collectors.toList());
 			result.addAll(usedAndRemaining.stream().map(p -> {
-				List<Set<Transfer>> res = new ArrayList<>();
+				List<FixedHashCodeSet<Transfer>> res = new ArrayList<>();
 				Transfer transfer = new Transfer(table, p.first(), structure);
 				if (!p.second().isEmpty()) {
-					List<Set<Transfer>> nextTransfers = process(structure, p.second().pop(), p.second());
+					List<FixedHashCodeSet<Transfer>> nextTransfers = process(structure, p.second().pop(), p.second());
 					nextTransfers.stream().forEach(list -> list.add(transfer));
 					res.addAll(nextTransfers);
 				} else {
-					Set<Transfer> nextTransfers = new HashSet<>();
+					FixedHashCodeSet<Transfer> nextTransfers = new FixedHashCodeSet<>();
 					nextTransfers.add(transfer);
 					res.add(nextTransfers);
 				}
@@ -363,19 +394,28 @@ public class Transfer {
 	private MVColumnDepth resolveDepth(RDBTable embeddedTable) {
 		RDBRelation relation = findRelation(m_structure.getRelations(), m_baseTable, embeddedTable);
 		MVColumnDepth result = MVColumnDepth.singlevalue;
-		if (relation.getRelationType() == RDBRelationType.primaryToForeign
-			&& relation.getTable2().equals(embeddedTable.getName())) {
-			result = MVColumnDepth.multivalue;
+		switch (relation.getRelationType()) {
+		case primaryToForeign:
+		case oneToMany:
+			if (relation.matchSecond(embeddedTable.getName())) {
+				result = MVColumnDepth.multivalue;
+			}
+			break;
+		case manyToOne:
+			if (relation.matchFirst(embeddedTable.getName())) {
+				result = MVColumnDepth.singlevalue;
+			}
+			break;
+		default:
+			break;
 		}
 		return result;
 	}
 
 	static RDBRelation findRelation(List<RDBRelation> relations, RDBTable table1, RDBTable table2) {
 		Optional<RDBRelation> optRelation = relations.stream()
-				.filter(relation -> (relation.getTable1().equals(table2.getName())
-						&& relation.getTable2().equals(table1.getName()))
-						|| (relation.getTable1().equals(table1.getName())
-							&& relation.getTable2().equals(table2.getName())))
+				.filter(relation -> (relation.match(table1.getName(), table2.getName()))
+						|| (relation.match(table2.getName(), table1.getName())))
 				.findAny();
 		RDBRelation relation = optRelation.get();
 		return relation;

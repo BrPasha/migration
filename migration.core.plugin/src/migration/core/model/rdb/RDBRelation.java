@@ -49,11 +49,50 @@ public class RDBRelation {
 		return m_relationType;
 	}
 	
+	public boolean match(String table) {
+		return matchFirst(table) || matchSecond(table);
+	}
+	
+	public boolean match(String table1, String table2) {
+		return matchFirst(table1) && matchSecond(table2);
+	}
+	
+	public boolean matchFirst(String table) {
+		return getTable1().equals(table);
+	}
+	
+	public boolean matchSecond(String table) {
+		return getTable2().equals(table);
+	}
+	
 	@Override
 	public String toString() {
+		String connector = "----";
+		switch (getRelationType()) {
+		case primaryToForeign:
+			connector = "<---";
+			break;
+		case primaryToPrimary:
+			connector = "----";
+			break;
+		case oneToOne:
+			connector = "1--1";
+			break;
+		case oneToMany:
+			connector = "1--N";
+			break;
+		case manyToOne:
+			connector = "N--1";
+			break;
+		case manyToMany:
+			connector = "N--N";
+			break;
+		default:
+			break;
+		}
 		return String.format("%s(%s) %s %s(%s)", 
 				getTable1(), getColumn1(), 
-				getRelationType() == RDBRelationType.primaryToForeign ? "<---" : "----", 
+				connector, 
 				getTable2(), getColumn2());
 	}
 }

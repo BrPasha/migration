@@ -121,8 +121,6 @@ public abstract class AbstractDatabaseClient implements IDatabaseClient {
 		return result;
 	}
 
-
-
 	@Override
 	public List<RDBRelation> getRelations() throws ProviderException {
 		List<RDBRelation> relations = new ArrayList<>();
