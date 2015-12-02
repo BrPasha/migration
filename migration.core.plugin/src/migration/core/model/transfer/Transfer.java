@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -28,10 +29,13 @@ import migration.core.model.rdb.RDBTable;
 import migration.core.util.Pair;
 
 public class Transfer {
+	public static final String DATE_CONF_CODE = "D4/";
+	public static final String TIME_CONV_CODE = "MTS";
+
 	private int m_hashCode;
 	
 	private RDBTable m_baseTable;
-	private Set<RDBTable> m_embeddedTables;
+	private TreeSet<RDBTable> m_embeddedTables;
 
 	private RDBStructure m_structure;
 	
@@ -50,9 +54,13 @@ public class Transfer {
 	public RDBTable getBaseTable() {
 		return m_baseTable;
 	}
+	
+	public RDBStructure getStructure() {
+		return m_structure;
+	}
 		
-	public Set<RDBTable> getEmbeddedTables() {
-		return Collections.unmodifiableSet(m_embeddedTables);
+	public SortedSet<RDBTable> getEmbeddedTables() {
+		return Collections.unmodifiableSortedSet(m_embeddedTables);
 	}
 	
 	public double weight(List<RDBRelation> relations) {
@@ -83,6 +91,8 @@ public class Transfer {
 	
 	public static List<Set<Transfer>> proposeTransformations(RDBStructure structure) {
 		List<Set<Transfer>> transformations = new ArrayList<>();
+		List<RDBTable> sourceTables = new ArrayList<>(structure.getTables());
+		sourceTables.sort((t1, t2) -> (int)(countRelations(t2, structure.getRelations()) - countRelations(t1, structure.getRelations())));
 		Collection<List<RDBTable>> permutations = Collections2.permutations(structure.getTables());
 		int count = 0;
 		for (List<RDBTable> tables : permutations) {
@@ -102,7 +112,11 @@ public class Transfer {
 		return new ArrayList<>(orderedStructures);
 	}
 	
-	private static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
+	private static long countRelations(RDBTable table, List<RDBRelation> relations) {
+		return relations.stream().filter(r -> r.getTable1().equals(table.getName()) || r.getTable2().equals(table.getName())).count();
+	}
+	
+	public static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
 		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 	
@@ -200,20 +214,57 @@ public class Transfer {
 	public MVFile constructMVFile() {
 		List<MVField> mvFields = new ArrayList<>();
 		int fieldLocation = 1;
+		Set<String> usedColumnNames = new HashSet<>();
 		for (RDBColumn column : m_baseTable.getColumns()) {
-			String convCode = resolveConvCode(column);
-			String format = resolveFormat(column);
-			MVField mvField = new MVField(
-					column.getName(), 
-					"D", 
-					String.valueOf(fieldLocation++), 
-					"", 
-					convCode, 
-					column.getName(), 
-					format, 
-					MVColumnDepth.singlevalue.value(), 
-					"");
-			mvFields.add(mvField);
+			if (column.getDataType() == Types.TIMESTAMP) {
+				String columnName = constructUniqueName(usedColumnNames, column);
+				String convCode = DATE_CONF_CODE;
+				String format = "";
+				MVField dateField = new MVField(
+						columnName + "_date", 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(dateField);
+				convCode = TIME_CONV_CODE;
+				format = "";
+				MVField timeField = new MVField(
+						columnName + "_time", 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(timeField);
+			} else {
+				String convCode = resolveConvCode(column);
+				String format = resolveFormat(column);
+				MVField mvField = new MVField(
+						constructUniqueName(usedColumnNames, column), 
+						"D", 
+						String.valueOf(fieldLocation++), 
+						"", 
+						convCode, 
+						column.getName(), 
+						format, 
+						MVColumnDepth.singlevalue.value(), 
+						"",
+						m_baseTable.getName(),
+						column.getName());
+				mvFields.add(mvField);
+			}
 		}
 		for (RDBTable embeddedTable : m_embeddedTables) {
 			MVColumnDepth depth = resolveDepth(embeddedTable);
@@ -221,20 +272,59 @@ public class Transfer {
 			List<String> addedColumnNames = new ArrayList<>();
 			for (RDBColumn column : embeddedTable.getColumns()) {
 				if (needToInclude(column)) {
-					String convCode = resolveConvCode(column);
-					String format = resolveFormat(column);
-					MVField mvField = new MVField(
-							column.getName(), 
-							"D", 
-							String.valueOf(fieldLocation++), 
-							"", 
-							convCode, 
-							column.getName(), 
-							format, 
-							depth.value(), 
-							associationName);
-					mvFields.add(mvField);
-					addedColumnNames.add(column.getName());
+					if (column.getDataType() == Types.TIMESTAMP) {
+						String convCode = DATE_CONF_CODE;
+						String format = "";
+						String columnUniqueName = constructUniqueName(usedColumnNames, column);
+						MVField mvField = new MVField(
+								columnUniqueName + "_date", 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+						convCode = TIME_CONV_CODE;
+						format = "";
+						mvField = new MVField(
+								columnUniqueName + "_time", 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+					} else {
+						String convCode = resolveConvCode(column);
+						String format = resolveFormat(column);
+						String columnUniqueName = constructUniqueName(usedColumnNames, column);
+						MVField mvField = new MVField(
+								columnUniqueName, 
+								"D", 
+								String.valueOf(fieldLocation++), 
+								"", 
+								convCode, 
+								column.getName(), 
+								format, 
+								depth.value(), 
+								associationName,
+								embeddedTable.getName(),
+								column.getName());
+						mvFields.add(mvField);
+						addedColumnNames.add(columnUniqueName);
+					}
 				}
 			}
 			if (depth == MVColumnDepth.multivalue) {
@@ -244,30 +334,47 @@ public class Transfer {
 						"", 
 						String.join(" ", addedColumnNames), 
 						"", 
-						associationName, 
 						"", 
-						MVColumnDepth.singlevalue.value(), 
+						"", 
+						"", 
+						"", 
+						"", 
 						"");
 				mvFields.add(mvField);
 			}
 		}
 		return new MVFile(m_baseTable.getName(), mvFields);
 	}
+
+	private String constructUniqueName(Set<String> usedColumnNames, RDBColumn column) {
+		String columnName = column.getName();
+		int idx = 1;
+		while (usedColumnNames.contains(columnName)) {
+			columnName = column.getName() + idx++;
+		}
+		usedColumnNames.add(columnName);
+		return columnName;
+	}
 	
 	private MVColumnDepth resolveDepth(RDBTable embeddedTable) {
-		Optional<RDBRelation> optRelation = m_structure.getRelations().stream()
-				.filter(relation -> (relation.getTable1().equals(embeddedTable.getName())
-						&& relation.getTable2().equals(m_baseTable.getName()))
-						|| (relation.getTable1().equals(m_baseTable.getName())
-							&& relation.getTable2().equals(embeddedTable.getName())))
-				.findAny();
-		RDBRelation relation = optRelation.get();
+		RDBRelation relation = findRelation(m_structure.getRelations(), m_baseTable, embeddedTable);
 		MVColumnDepth result = MVColumnDepth.singlevalue;
 		if (relation.getRelationType() == RDBRelationType.primaryToForeign
 			&& relation.getTable2().equals(embeddedTable.getName())) {
 			result = MVColumnDepth.multivalue;
 		}
 		return result;
+	}
+
+	static RDBRelation findRelation(List<RDBRelation> relations, RDBTable table1, RDBTable table2) {
+		Optional<RDBRelation> optRelation = relations.stream()
+				.filter(relation -> (relation.getTable1().equals(table2.getName())
+						&& relation.getTable2().equals(table1.getName()))
+						|| (relation.getTable1().equals(table1.getName())
+							&& relation.getTable2().equals(table2.getName())))
+				.findAny();
+		RDBRelation relation = optRelation.get();
+		return relation;
 	}
 
 	private boolean needToInclude(RDBColumn column) {
@@ -287,7 +394,6 @@ public class Transfer {
 		case Types.TIME:
 		case Types.DATE:
 		case Types.TIMESTAMP:
-		case Types.TIME_WITH_TIMEZONE:
 		case Types.TIMESTAMP_WITH_TIMEZONE:
 			format = "";
 			break;
@@ -317,20 +423,17 @@ public class Transfer {
 			convCode = "";
 			break;
 		case Types.TIME:
-			convCode = "MTHS";
+			convCode = TIME_CONV_CODE;
 			break;
 		case Types.DATE:
-			convCode = "D4/";
+			convCode = DATE_CONF_CODE;
 			break;
 		case Types.TIMESTAMP:
-		case Types.TIME_WITH_TIMEZONE:
 		case Types.TIMESTAMP_WITH_TIMEZONE:
 			convCode = "";
 			break;
 		case Types.DECIMAL:
 		case Types.NUMERIC:
-			convCode = "MD" + column.getDecimalDigits();
-			break;
 		case Types.DOUBLE:
 		case Types.REAL:
 		case Types.FLOAT:

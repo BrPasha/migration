@@ -29,8 +29,10 @@ import migration.core.model.mv.MVFile;
 public class FileNode extends UserControl
 {
     private static final String COLUMN_NAME = "name";
-    private static final String COLUMN_IS_MULTIVALUE = "type";
-    private static final String COLUMN_TABLE = "location";
+    private static final String COLUMN_TYPE = "type";
+    private static final String COLUMN_DEPTH = "depth";
+    private static final String COLUMN_CONVERSION_CODE = "convCode";
+    private static final String COLUMN_TABLE = "sourceTable";
     
     @FXML
     private Label labelTitle;
@@ -45,8 +47,14 @@ public class FileNode extends UserControl
     private TableColumn<MVField, String> columnName;
  
     @FXML
-    private TableColumn<MVField, String> columnMultivalue;
+    private TableColumn<MVField, String> columnType;
  
+    @FXML
+    private TableColumn<MVField, String> columnDepth;
+    
+    @FXML
+    private TableColumn<MVField, String> columnConversionCode;
+    
     @FXML
     private TableColumn<MVField, String> columnTable;
 
@@ -66,7 +74,9 @@ public class FileNode extends UserControl
                 }
             }
         );
-        columnMultivalue.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_IS_MULTIVALUE));
+        columnType.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_TYPE));
+        columnConversionCode.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_CONVERSION_CODE));
+        columnDepth.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_DEPTH));
         columnTable.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_TABLE));
     }
     

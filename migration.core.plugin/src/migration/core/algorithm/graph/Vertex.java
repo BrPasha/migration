@@ -44,4 +44,9 @@ public class Vertex<T, E> implements Iterable<Vertex<T, E>> {
 	public Stream<Vertex<T, E>> stream() {
 		return StreamSupport.stream(spliterator(), false);
 	}
+	
+	@Override
+	public String toString() {
+		return getData().toString();
+	}
 }

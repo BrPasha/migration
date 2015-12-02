@@ -55,7 +55,7 @@ public class RDBStructure {
 					vertices.get(relation.getTable1()), 
 					vertices.get(relation.getTable2()), 
 					relation, 
-					true);
+					false);
 			vertices.get(relation.getTable1()).addEdge(edge);
 			vertices.get(relation.getTable2()).addEdge(edge);
 		});

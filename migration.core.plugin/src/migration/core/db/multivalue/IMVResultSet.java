@@ -1,10 +1,9 @@
 package migration.core.db.multivalue;
 
-import asjava.uniclientlibs.UniDynArray;
+import asjava.uniobjects.UniSession;
 import migration.core.db.relational.ProviderException;
+import migration.core.model.transfer.Record;
 
-public interface IMVResultSet {
-	boolean next() throws ProviderException;
-	String recordId() throws ProviderException;
-	UniDynArray record() throws ProviderException;
+public interface IMVResultSet extends AutoCloseable {
+	Record nextRecord(UniSession session, IMVMetadataProvider metadataProvider) throws ProviderException;
 }
