@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import migration.core.algorithm.graph.Edge;
 import migration.core.algorithm.graph.Graph;
 import migration.core.algorithm.graph.Vertex;
@@ -17,20 +14,15 @@ public class RDBStructure {
 	private List<RDBTable> m_tables;
 	private List<RDBRelation> m_relations;
 	
-	@JsonCreator
-	public RDBStructure(
-			@JsonProperty("tables") List<RDBTable> tables, 
-			@JsonProperty("relations") List<RDBRelation> relations ) {
+	public RDBStructure(List<RDBTable> tables, List<RDBRelation> relations) {
 		m_tables = tables;
 		m_relations = relations;
 	}
 	
-	@JsonProperty("relations")
 	public List<RDBRelation> getRelations() {
 		return m_relations;
 	}
 	
-	@JsonProperty("tables")
 	public List<RDBTable> getTables() {
 		return m_tables;
 	}

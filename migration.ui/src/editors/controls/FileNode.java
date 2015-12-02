@@ -1,5 +1,6 @@
 package editors.controls;
 
+import editors.database.ISelectedListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -28,11 +29,16 @@ import migration.core.model.mv.MVFile;
  */
 public class FileNode extends UserControl
 {
+    private static final String SELECTED_COLOR = "#99FFA1";
+    
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_TYPE = "type";
     private static final String COLUMN_DEPTH = "depth";
     private static final String COLUMN_CONVERSION_CODE = "convCode";
     private static final String COLUMN_TABLE = "sourceTable";
+    
+    private ISelectedListener m_selectedListener;
+    private MVFile m_model;
     
     @FXML
     private Label labelTitle;
@@ -82,13 +88,14 @@ public class FileNode extends UserControl
     
     private ObservableList<MVField> fields = FXCollections.observableArrayList();
     
-    public FileNode(MVFile model){
+    public FileNode(MVFile model, ISelectedListener selectedListener){
         super();
         
+        m_model = model;
         labelTitle.setText(model.getName());
         fields.addAll(model.getFields());
         tableFields.setItems(fields);
-        
+        this.m_selectedListener = selectedListener;
         //tableFields.setSelectionModel(null);
         tableFields.widthProperty().addListener(new ChangeListener<Number>()
         {
@@ -112,6 +119,18 @@ public class FileNode extends UserControl
     protected Node getHeaderNode()
     {
         return hboxHeader;
+    }
+
+    @Override
+    protected String getSelectedColor()
+    {
+        return SELECTED_COLOR;
+    }
+
+    @Override
+    protected void setSelecting(boolean selected)
+    {
+        m_selectedListener.select(selected, m_model.getSourceTables());
     }
 }
 

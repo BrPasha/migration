@@ -94,7 +94,7 @@ public class RDBEditor
         {
             
             @Override
-            public void select(boolean selected)
+            public void select(boolean selected, Object data)
             {
                 List<VisualLink> links = m_links.get(model.getName());
                 if (links != null){
@@ -106,6 +106,13 @@ public class RDBEditor
         });
         control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
         return control;
+    }
+    
+    public void highlightTables(List<String> tables, boolean highlight){
+        for (String table:tables){
+            TableNode node = m_tables.get(table);
+            node.highlight(highlight);
+        }
     }
     
     public void layout(){

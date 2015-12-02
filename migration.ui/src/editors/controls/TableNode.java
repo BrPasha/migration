@@ -29,6 +29,10 @@ import migration.core.model.rdb.RDBTable;
  */
 public class TableNode extends UserControl
 {
+    private final static String SELECTED_COLOR = "#9BD5FF";
+    //private final static String HIGLIGHTED_COLOR = "#02CD02";
+    private final static String HIGLIGHTED_COLOR = "#99FFA1";
+    
     private RDBTable m_model;
     
     @FXML
@@ -49,6 +53,8 @@ public class TableNode extends UserControl
     
     private ISelectedListener m_selectedListener;
         
+    private String color = SELECTED_COLOR;
+    
     public final boolean isSelected() {
         return selected == null ? false : selected.get();
     }
@@ -105,8 +111,23 @@ public class TableNode extends UserControl
     }
     
     protected void setSelecting(boolean selected){
-        m_selectedListener.select(selected);
+        m_selectedListener.select(selected, null);
+    }
+
+    @Override
+    protected String getSelectedColor()
+    {
+        return color;
     }
     
+    public void highlight(boolean highlighted){
+        color = highlighted ? HIGLIGHTED_COLOR : SELECTED_COLOR;
+        if(highlighted){
+            addShadow();
+        }
+        else{
+            removeShadow();
+        }
+    }
 }
 
