@@ -2,14 +2,21 @@ package migration.core.model.transfer;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import asjava.uniclientlibs.UniDynArray;
+import asjava.uniclientlibs.UniString;
+import asjava.uniclientlibs.UniStringException;
+import asjava.uniobjects.UniSession;
 import migration.core.db.multivalue.IMVResultSet;
 import migration.core.db.relational.IDatabaseClient;
 import migration.core.db.relational.ProviderException;
@@ -68,7 +75,7 @@ public class Data implements IMVResultSet {
 		return strbuf.toString();
 	}
 	
-	public Record nextRecord() throws ProviderException {
+	public Record nextRecord(UniSession session) throws ProviderException {
 		try {
 			if (m_baseTableResultSet == null) {
 				String sql = generateSql();
@@ -81,12 +88,12 @@ public class Data implements IMVResultSet {
 				return null;
 			}
 			List<String> recordIdParts = extractRecordIdParts();
-			UniDynArray recordData = record();
+			UniDynArray recordData = record(session);
 			while (m_baseTableResultSet.next()) {
 				if (recordIdParts.equals(extractRecordIdParts())) {
-					UniDynArray nextDataPart = record();
+					UniDynArray nextDataPart = record(session);
 					for (int i = 0; i < nextDataPart.dcount(); i++) {
-						String cell = nextDataPart.extract(i).toString();
+						UniDynArray cell = nextDataPart.extract(i);
 						if (recordData.extract(i).dcount() > 1 || !recordData.extract(i).equals(cell)) {
 							recordData.insert(i, cell);
 						}
@@ -101,22 +108,54 @@ public class Data implements IMVResultSet {
 		}
 	}
 	
-	private UniDynArray record() throws ProviderException {
+	private UniDynArray record(UniSession session) throws ProviderException {
 		try {
-			UniDynArray record = new UniDynArray("");
-			int idx = 1;
+			UniDynArray record = new UniDynArray(session, "");
+			int mvIdx = 1;
+			int relIdx = 1;
 			for (RDBColumn column : m_transfer.getBaseTable().getColumns()) {
-				String cell = m_baseTableResultSet.getString(column.getName());
-				if (m_baseTableResultSet.wasNull()) {
-					record.replace(idx++, "");
-				} else {
-					record.replace(idx++, cell);
+				mvIdx = writeColumn(relIdx++, session, record, mvIdx, column);
+			}
+			for (RDBTable table : m_transfer.getEmbeddedTables()) {
+				for (RDBColumn column : table.getColumns()) {
+					mvIdx = writeColumn(relIdx++, session, record, mvIdx, column);
 				}
 			}
 			return record;
 		} catch (SQLException ex) {
 			throw new ProviderException(ex);
+		} catch (UniStringException ex) {
+			throw new ProviderException(ex);
 		}
+	}
+
+	private int writeColumn(int relIdx, UniSession session, UniDynArray record, int mvIdx, RDBColumn column)
+			throws SQLException, UniStringException {
+		if (column.getDataType() == Types.TIMESTAMP) {
+			Timestamp timestamp = m_baseTableResultSet.getTimestamp(relIdx);
+			if (m_baseTableResultSet.wasNull()) {
+				record.replace(mvIdx++, "");
+				record.replace(mvIdx++, "");
+			} else {
+				UniString internalDate = session.iconv(
+						DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.US).format(timestamp), 
+						Transfer.DATE_CONF_CODE);
+				record.replace(mvIdx++, internalDate);
+				String time = DateFormat.getTimeInstance(DateFormat.MEDIUM, Locale.US).format(timestamp);
+				UniString internalTime = session.iconv(
+						time.substring(0, time.length() - 3), 
+						Transfer.TIME_CONV_CODE);
+				record.replace(mvIdx++, internalTime);
+			}
+		} else {
+			String cell = m_baseTableResultSet.getString(relIdx);
+			if (m_baseTableResultSet.wasNull()) {
+				record.replace(mvIdx++, "");
+			} else {
+				record.replace(mvIdx++, cell);
+			}
+		}
+		return mvIdx;
 	}
 
 	private List<String> extractRecordIdParts() throws SQLException {
