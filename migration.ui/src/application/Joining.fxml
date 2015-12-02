@@ -27,7 +27,7 @@
 
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" style="-fx-background-color: -fx-main-background;"
-	prefHeight="350.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2"
+	prefHeight="350.0" prefWidth="500.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2"
 	fx:controller="application.JoiningController">
   <top>
   	<BorderPane prefHeight="80.0" prefWidth="600.0" style="-fx-background-color: -fx-main-background;">
@@ -62,11 +62,6 @@
           	</BorderPane.margin>
       	</right>
   	</BorderPane>
-  	<!-- 
-  	<BorderPane.margin>
-          <Insets bottom="10"></Insets>
-    </BorderPane.margin>
-     -->
   </top>
   <center>
         <BorderPane prefHeight="200.0" prefWidth="400.0" style="-fx-background-color: -fx-main-background;" >     
@@ -122,14 +117,14 @@
             			</GridPane>
             </top>
             <bottom>
-	            		<ComboBox translateX="-50" translateY="-20" fx:id="combo_Joins"  
+	            		<ComboBox translateX="-30" translateY="-20" fx:id="combo_Joins"  
 	            			BorderPane.alignment="CENTER" styleClass="combo"
 	            			visibleRowCount="4">
     	        		</ComboBox>
     	    
         	</bottom>
         	<BorderPane.margin>
-        		<Insets left="130" bottom="10">
+        		<Insets left="70" bottom="10">
         		</Insets>
         	</BorderPane.margin>
         </BorderPane>

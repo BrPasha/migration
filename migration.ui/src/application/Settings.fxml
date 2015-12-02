@@ -153,7 +153,7 @@
           					</children>
                   		</GridPane>
                   		<BorderPane.margin>
-                    				<Insets right="30.0" bottom="20"/>
+                    				<Insets right="30.0" bottom="20" />
                   				</BorderPane.margin>
           			</right>
           		</BorderPane>

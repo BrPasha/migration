@@ -15,6 +15,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart.Data;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
@@ -68,11 +69,19 @@ public class ApplicationController {
         this.m_stage = stage;
     }
     
+    public TabPane getRDBPane(){
+    	return rdbTabPane;
+    }
+    
+    public DatabasesSettings getDBSettings(){
+    	return this.dbSettings;
+    }
+    
     public void showTables() throws ProviderException{
         String dbName = dbSettings.getRDBName();
         final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
         		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
-        
+        /**/
         final List<RDBTable> tabels = client.getTables();
         final List<RDBRelation> relations = client.getRelations();
         
@@ -104,6 +113,8 @@ public class ApplicationController {
     
     private Pane addNewTab(String name, TabPane tab, ChangeListener<Number> listener){
         if (tab != null){
+        	System.out.println("!!!! " + tab.getTabs().size());
+        	//if (tab.getTabs().size() == 0) {
             Tab newTab = new Tab(name);
             AnchorPane aPane = new AnchorPane();
             newTab.setContent(aPane);
@@ -134,14 +145,43 @@ public class ApplicationController {
             
             pane.setMinSize(200, 200);
             return pane;
+            /*}
+        	
+        	else {
+        		tab.getTabs().clear();
+        	}
+        	*/
         }
         return null;
+    }
+    
+    @FXML
+    private void btn_Info_clicked(){
+    	try {
+			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Joining.fxml"));
+			BorderPane root = (BorderPane)fxmlLoader.load();
+    		Scene scene = new Scene(root, 500, 350);
+			scene.getStylesheets().add(getClass().getResource("joining.css").toExternalForm());
+			Stage stage = new Stage();
+			stage.setScene(scene);
+			stage.setResizable(false);
+			stage.setTitle("Join types");
+			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
+			stage.initModality(Modality.WINDOW_MODAL);
+			stage.initOwner(m_stage);
+			((JoiningController)fxmlLoader.getController()).setStage(stage);
+			stage.show();
+    	}
+    	catch(Exception e) {
+    	       e.printStackTrace();
+        }
     }
     
     @FXML
 	private void btn_Settings_clicked(){
     	try {
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Settings.fxml"));
+			//((SettingsController)fxmlLoader.getController()).setDBSettings(dbSettings);
 			BorderPane root = (BorderPane)fxmlLoader.load();
     		Scene scene = new Scene(root, 800, 600);
 			scene.getStylesheets().add(getClass().getResource("settings.css").toExternalForm());
@@ -152,7 +192,17 @@ public class ApplicationController {
 			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			stage.initModality(Modality.WINDOW_MODAL);
 			stage.initOwner(m_stage);
-			((SettingsController)fxmlLoader.getController()).setStage(stage);
+			SettingsController settingsController = (SettingsController)fxmlLoader.getController();
+			settingsController.setStage(stage);
+			settingsController.setParentController(this);
+			settingsController.initializeDefaultValues(dbSettings);
+			settingsController.addSettingsListener(new SettingsListener() {
+				@Override
+				public void onApply(DatabasesSettings settings) {
+					dbSettings = settings;
+					submitShowTables();
+				}
+			});
 			stage.show();
 			
 			/*
@@ -168,7 +218,21 @@ public class ApplicationController {
       }
     }
     
-    @FXML
+    protected void submitShowTables() {
+    	Task<Void> task = new Task<Void>()
+        {
+            @Override
+            protected Void call()
+                throws Exception
+            {
+                showTables();
+                return null;
+            }
+        };
+        ProgressForm.showProgress(task, m_stage);
+	}
+
+	@FXML
     private void onActionMigrate(ActionEvent e){
         Task<Void> task = new Task<Void>()
         {
@@ -212,7 +276,7 @@ public class ApplicationController {
                                     }
                                 }
                             };
-                            Pane pane = addNewTab("VARIANT " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
+                            Pane pane = addNewTab("OPTION " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
                             MVEditor editor = new MVEditor(pane, listener);
                             editor.setData(files);
                             m_mvEditors.add(editor);

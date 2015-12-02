@@ -42,7 +42,7 @@
       					<Button fx:id="btn_Info" prefHeight="35.0" prefWidth="36.0" styleClass="button-info" BorderPane.alignment="CENTER_RIGHT"
       						contentDisplay="RIGHT" mnemonicParsing="false" 
       						text="i" textAlignment="CENTER" textOverrun="CLIP" 
-      						translateX="25.0" >
+      						translateX="25.0" onMouseClicked="#btn_Info_clicked">
           					<font>
             					<Font name="Trebuchet MS" size="14.0" style="bold" />
           					</font>
