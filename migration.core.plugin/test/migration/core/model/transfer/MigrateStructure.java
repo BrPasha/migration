@@ -10,6 +10,7 @@ import migration.core.db.multivalue.impl.uv.UniVerseDatabaseClient;
 import migration.core.db.relational.impl.mysql.MySqlDatabaseClient;
 import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBRelation;
+import migration.core.model.rdb.RDBRelationType;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
 
@@ -21,6 +22,7 @@ public class MigrateStructure {
 		
 		List<RDBTable> tables = client.getTables();
 		List<RDBRelation> relations = client.getRelations();
+		relations.add(new RDBRelation("film", "film_id", "film_text", "film_id", RDBRelationType.oneToOne));
 		RDBStructure structure = new RDBStructure(tables, relations);
 		
 		List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);

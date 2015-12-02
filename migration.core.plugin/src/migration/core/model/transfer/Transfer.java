@@ -76,7 +76,7 @@ public class Transfer {
 						if (relation.match(getBaseTable().getName(), u.getName())) {
 							result = result + 1;
 						} else if (relation.match(u.getName(), getBaseTable().getName())) {
-							if (u.getColumns().size() < 3 && u.getColumns().size() < getBaseTable().getColumns().size()) {
+							if (u.getColumns().size() <= 3 && u.getColumns().size() < getBaseTable().getColumns().size()) {
 								result = result + 0.5;
 							} else {
 								result = result - 0.5;
