@@ -13,6 +13,7 @@ import asjava.uniobjects.UniSession;
 import asjava.uniobjects.UniSessionException;
 import asjava.uniobjects.UniSubroutine;
 import migration.core.db.multivalue.IMVDatabaseClient;
+import migration.core.db.multivalue.IMVMetadataProvider;
 import migration.core.db.multivalue.IMVResultSet;
 import migration.core.db.multivalue.MVProviderException;
 import migration.core.db.relational.ProviderException;
@@ -49,6 +50,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			session.setAccountPath(DEFAULT_ACCOUNT);
 			session.setUserName(m_username);
 			session.setPassword(m_password);
+			session.setSessionEncoding("ISO-8859-1");
 			session.connect();
 			invokeXtoolsub(session, XTOOLSUBConstant.Initialize, "");
 			invokeXtoolsub(session, XTOOLSUBConstant.LogtoAccount, DEFAULT_ACCOUNT);
@@ -174,7 +176,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 	}
 
 	@Override
-	public void exportData(String accountName, String fileName, IMVResultSet rs) throws MVProviderException {
+	public void exportData(String accountName, String fileName, IMVMetadataProvider metadataProvider, IMVResultSet rs) throws MVProviderException {
 		UniSession session = openSession();
 		try {
 			logtoAccount(session, accountName);
@@ -182,8 +184,12 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			try {
 				UniDataSet dataSet = session.dataSet();
 				Record record = null;
-				while ((record = rs.nextRecord(session)) != null) {
+				int counter = 0;
+				while ((record = rs.nextRecord(session, metadataProvider)) != null) {
 					dataSet.append(record.getId(), record.getData());
+					if (fileName.equals("customer") && counter++ < 2) {
+						break;
+					}
 				}
 				file.write(dataSet);
 			} finally {

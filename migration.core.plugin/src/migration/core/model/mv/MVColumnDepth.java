@@ -13,4 +13,12 @@ public enum MVColumnDepth {
 	public String value() {
 		return m_value;
 	}
+	
+	public static MVColumnDepth resolve(String strValue) {
+		if (strValue.equals("M")) {
+			return multivalue;
+		} else {
+			return singlevalue;
+		}
+	}
 }

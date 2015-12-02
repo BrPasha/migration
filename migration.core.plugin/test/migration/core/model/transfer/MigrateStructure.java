@@ -29,12 +29,13 @@ public class MigrateStructure {
 		u2Client.createAccount("TESTACC");
 		
 		Set<Transfer> transformation1 = transformations.get(0);
+		transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
 		Plan plan = new Plan(new ArrayList<>(transformation1), client);
 		while (plan.next()) {
 			MVFile mvFile = plan.getStructure();
 			u2Client.createFile("TESTACC", mvFile);
 			try (Data data = plan.getData()) {
-				u2Client.exportData("TESTACC", mvFile.getName(), data);
+				u2Client.exportData("TESTACC", mvFile.getName(), mvFile, data);
 			}
 		}
 	}
