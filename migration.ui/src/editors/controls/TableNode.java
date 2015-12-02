@@ -1,8 +1,13 @@
 package editors.controls;
 
-import javafx.beans.property.ReadOnlyBooleanProperty;
+import java.util.HashMap;
+import java.util.Map;
+
+import editors.database.ISelectedListener;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -40,40 +45,18 @@ public class TableNode extends UserControl
     
     private ReadOnlyBooleanWrapper selected;
    
-    protected final void setSelected(boolean value) {
-        selectedPropertyImpl().set(value);
-    }
+    private Map<String, Label> m_rows = new HashMap<String, Label>(); 
+    
+    private ISelectedListener m_selectedListener;
         
     public final boolean isSelected() {
         return selected == null ? false : selected.get();
     }
-        
-    public final ReadOnlyBooleanProperty selectedProperty() {
-        return selectedPropertyImpl().getReadOnlyProperty();
-    }
     
-    private ReadOnlyBooleanWrapper selectedPropertyImpl() {
-        if (selected == null) {
-            selected = new ReadOnlyBooleanWrapper(){
-                 @Override
-                public String getName()
-                {
-                    return "selected";
-                }   
-                
-                 @Override
-                public Object getBean()
-                {
-                    return TableNode.this;
-                }
-            };
-        }
-        return selected;
-    }
-    
-    public TableNode(RDBTable model){
+    public TableNode(RDBTable model, ISelectedListener listener){
         super();
         m_model = model;
+        m_selectedListener = listener;
         scrollPane.setFitToWidth(true);
         labelTitle.setText(model.getName());
         vboxColumns.getChildren().clear();
@@ -82,9 +65,34 @@ public class TableNode extends UserControl
             label.setText(column.getName());
             label.setTextFill(Color.WHITE);
             vboxColumns.getChildren().add(label);
+            m_rows.put(column.getName(), label);
         }
     }
 
+    public void addScrollListener(ChangeListener<Number> listener){
+        scrollPane.vvalueProperty().addListener(listener);
+    }
+    
+    public Point2D getConnectionPoint(String column)
+    {
+        Label row = m_rows.get(column);
+        if (row == null){
+            return this.localToScene(0, 0);
+        }
+        Point2D columnPoint = row.localToScene(new Point2D(0,0));
+        columnPoint = new Point2D(columnPoint.getX(), columnPoint.getY() + row.getHeight()/2);
+        Point2D rootPoint = scrollPane.localToScene(new Point2D(0,0));
+        
+        double yPosition = columnPoint.getY();
+        if (yPosition > rootPoint.getY() + scrollPane.getHeight()){
+            yPosition = rootPoint.getY() + scrollPane.getHeight();
+        }
+        if (yPosition < rootPoint.getY()){
+            yPosition = rootPoint.getY();
+        }
+        return new Point2D(0,yPosition);
+    }
+    
     @Override
     protected Node getHeaderNode()
     {
@@ -93,7 +101,12 @@ public class TableNode extends UserControl
     
     @FXML
     private void onMouseClicked(MouseEvent event){
-        setSelected(!isSelected());
+        
     }
+    
+    protected void setSelecting(boolean selected){
+        m_selectedListener.select(selected);
+    }
+    
 }
 

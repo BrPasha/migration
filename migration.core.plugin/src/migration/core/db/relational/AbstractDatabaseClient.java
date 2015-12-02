@@ -126,7 +126,7 @@ public abstract class AbstractDatabaseClient implements IDatabaseClient {
 				List<RDBForeignKey> foreignKeys = getForeignKeys(connection, table.getName());
 				List<RDBRelation> tableRelations = foreignKeys.stream()
 					.flatMap(key -> key.getFkColumns().stream()
-							.map(p -> new RDBRelation(key.getPkTable(), p.first(), key.getFkTable(), p.second(), RDBRelationType.primaryToForeign)))
+							.map(p -> new RDBRelation(key.getFkTable(), p.first(), key.getPkTable(), p.second(), RDBRelationType.primaryToForeign)))
 					.collect(Collectors.toList());
 				relations.addAll(tableRelations);
 			}
