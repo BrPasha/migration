@@ -1,10 +1,13 @@
 package migration.core.model.transfer;
 
+import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -147,6 +150,35 @@ public class Data implements IMVResultSet {
 						Transfer.TIME_CONV_CODE);
 				record.replace(mvIdx++, internalTime);
 			}
+		} else if (column.getDataType() == Types.DATE) {
+			Date timestamp = m_baseTableResultSet.getDate(relIdx);
+			if (m_baseTableResultSet.wasNull()) {
+				record.replace(mvIdx++, "");
+			} else {
+				UniString internalDate = session.iconv(
+						DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.US).format(timestamp), 
+						Transfer.DATE_CONF_CODE);
+				record.replace(mvIdx++, internalDate);
+			}
+		} else if (column.getDataType() == Types.TIME) {
+			Date timestamp = m_baseTableResultSet.getDate(relIdx);
+			if (m_baseTableResultSet.wasNull()) {
+				record.replace(mvIdx++, "");
+			} else {
+				String time = DateFormat.getTimeInstance(DateFormat.MEDIUM, Locale.US).format(timestamp);
+				UniString internalTime = session.iconv(
+						time.substring(0, time.length() - 3), 
+						Transfer.TIME_CONV_CODE);
+				record.replace(mvIdx++, internalTime);
+			}
+		} else if (column.getDataType() == Types.DECIMAL) {
+			BigDecimal bd = m_baseTableResultSet.getBigDecimal(relIdx);
+			NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+			numberFormat.setMinimumFractionDigits(column.getDecimalDigits());
+			UniString val = session.iconv(
+					numberFormat.format(bd), 
+					"MR" + column.getDecimalDigits());
+			record.replace(mvIdx++, val);
 		} else {
 			String cell = m_baseTableResultSet.getString(relIdx);
 			if (m_baseTableResultSet.wasNull()) {

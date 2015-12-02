@@ -434,8 +434,6 @@ public class Transfer {
 			break;
 		case Types.DECIMAL:
 		case Types.NUMERIC:
-			convCode = "MD" + column.getDecimalDigits();
-			break;
 		case Types.DOUBLE:
 		case Types.REAL:
 		case Types.FLOAT:
