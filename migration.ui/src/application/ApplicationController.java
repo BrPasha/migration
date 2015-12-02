@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import editors.database.ISelectedListener;
 import editors.database.MVEditor;
 import editors.database.RDBEditor;
 import javafx.application.Platform;
@@ -185,6 +186,15 @@ public class ApplicationController {
                     {
                         m_mvEditors.clear();
                         mvTabPane.getTabs().clear();
+                        
+                        ISelectedListener listener = new ISelectedListener()
+                        {
+                            @Override
+                            public void select(boolean selected, Object data)
+                            {
+                                m_rdbEditor.highlightTables((List<String>)data, selected);
+                            }
+                        };
                         for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){
                             Set<Transfer> variant = transformations.get(i);
                             List<MVFile> files = new ArrayList<MVFile>();
@@ -203,7 +213,7 @@ public class ApplicationController {
                                 }
                             };
                             Pane pane = addNewTab("VARIANT " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
-                            MVEditor editor = new MVEditor(pane);
+                            MVEditor editor = new MVEditor(pane, listener);
                             editor.setData(files);
                             m_mvEditors.add(editor);
                             editor.layout();

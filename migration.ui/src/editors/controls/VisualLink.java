@@ -4,7 +4,9 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import migration.core.model.rdb.RDBRelation;
 
@@ -19,6 +21,7 @@ import migration.core.model.rdb.RDBRelation;
 public class VisualLink
 {
     private static int DISTANCE = 10;
+    private static String SELECTED_COLOR = "#9BD5FF";
     
     private RDBRelation m_relation = null;
     private TableNode m_table1;
@@ -67,9 +70,15 @@ public class VisualLink
         m_parent.getChildren().add(m_lines);
         if (m_selected){
             m_lines.toFront();
+            DropShadow shadow = new DropShadow();
+            shadow.setRadius(10);
+            //shadow.setColor(Color.web("#0099FF"));
+            shadow.setColor(Color.WHITE);
+            m_lines.setEffect(shadow);
         }
         else{
             m_lines.toBack();
+            m_lines.setEffect(null);
         }
     }
     

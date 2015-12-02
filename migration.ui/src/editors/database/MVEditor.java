@@ -23,10 +23,12 @@ public class MVEditor
     
     private Pane m_pane;
     private List<MVFile> m_files;
+    private ISelectedListener m_selectedListener;
     
-    public MVEditor(Pane pane)
+    public MVEditor(Pane pane, ISelectedListener listener)
     {
         this.m_pane = pane;
+        this.m_selectedListener = listener;
     }
     
     public void setData(List<MVFile> files)
@@ -66,7 +68,7 @@ public class MVEditor
     }
     
     public FileNode createFile(MVFile model){
-        FileNode control = new FileNode(model);
+        FileNode control = new FileNode(model, m_selectedListener);
         control.setStyle("-fx-background-color: #2D7EBE; -fx-text-fill: white;");
         return control;
     }

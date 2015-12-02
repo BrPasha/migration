@@ -68,22 +68,19 @@ public abstract class UserControl extends Region {
     private void init(){
         this.setOnMouseEntered(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
-                UserControl.this.toFront();
-                DropShadow shadow = new DropShadow();
-                shadow.setWidth(30);
-                shadow.setHeight(30);
-                //shadow.setRadius(0);
-                shadow.setColor(Color.WHITE);
-                UserControl.this.setEffect(shadow);
-                setSelecting(true);
+                if (startPoint == null){
+                    addShadow();
+                    setSelecting(true);
+                }
             }
         });
         
-        this.setOnMouseExited(new EventHandler<MouseEvent>() {
+        root.setOnMouseExited(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
-                UserControl.this.toFront();
-                UserControl.this.setEffect(null);
-                setSelecting(false);
+                if (startPoint == null){
+                    removeShadow();
+                    setSelecting(false);
+                }
             }
         });
         
@@ -111,6 +108,10 @@ public abstract class UserControl extends Region {
             public void handle(MouseEvent e) {
                 getHeaderNode().setCursor(Cursor.DEFAULT);
                 startPoint = null;
+                if (!contains(new Point2D(e.getX(),e.getY()))){
+                    removeShadow();
+                    setSelecting(false);
+                }
                 e.consume();
             }
         });
@@ -150,8 +151,6 @@ public abstract class UserControl extends Region {
             size = new Point2D(size.getX() + changes.getX(), size.getY() + changes.getY());
             UserControl.this.setMinSize(size.getX(), size.getY());
             root.setMinSize(size.getX(), size.getY());
-//            UserControl.this.setWidth(UserControl.this.getWidth() + changes.getX());
-//            UserControl.this.setHeight(UserControl.this.getHeight() + changes.getY());
         }
         startPoint = point;
         startPoint = new Point2D(e.getSceneX(), e.getSceneY());
@@ -159,13 +158,35 @@ public abstract class UserControl extends Region {
     
     @FXML
     private void onMouseReleasedResizeImage(MouseEvent e){
+        if (!contains(new Point2D(e.getX(),e.getY()))){
+            removeShadow();
+            setSelecting(false);
+        }
         startPoint = null;
+    }
+    
+    private boolean containsPoint(double x, double y){
+        Point2D point = this.localToScene(new Point2D(0,0));
+        return x >= point.getX() && x <= point.getX() + this.getWidth() && y >= point.getY() && y <= point.getY() + this.getHeight();
+    }
+    protected void addShadow(){
+        UserControl.this.toFront();
+        DropShadow shadow = new DropShadow();
+        shadow.setWidth(0);
+        shadow.setHeight(0);
+        shadow.setRadius(30);
+        shadow.setColor(Color.web(getSelectedColor()));
+        UserControl.this.setEffect(shadow);
+    }
+    
+    protected void removeShadow(){
+        UserControl.this.setEffect(null);
     }
     
     protected abstract Node getHeaderNode();
     
-    protected void setSelecting(boolean selected){
-        
-    }
+    protected abstract void setSelecting(boolean selected);
+    
+    protected abstract String getSelectedColor();
 }
 
