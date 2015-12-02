@@ -11,6 +11,8 @@ package editors.database;
  */
 public interface ISelectedListener
 {
-    void select(boolean selected, Object data);
+    void select(boolean selected, Object source, Object data);
+    
+    void highlight(boolean highlighted, Object data);
 }
 

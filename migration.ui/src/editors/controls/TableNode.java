@@ -14,7 +14,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import migration.core.model.rdb.RDBColumn;
 import migration.core.model.rdb.RDBTable;
 
@@ -49,7 +48,7 @@ public class TableNode extends UserControl
     
     private ReadOnlyBooleanWrapper selected;
    
-    private Map<String, Label> m_rows = new HashMap<String, Label>(); 
+    private Map<String, ColumnControl> m_rows = new HashMap<String, ColumnControl>(); 
     
     private ISelectedListener m_selectedListener;
         
@@ -67,11 +66,22 @@ public class TableNode extends UserControl
         labelTitle.setText(model.getName());
         vboxColumns.getChildren().clear();
         for (RDBColumn column : model.getColumns()){
-            Label label = new Label();
-            label.setText(column.getName());
-            label.setTextFill(Color.WHITE);
-            vboxColumns.getChildren().add(label);
-            m_rows.put(column.getName(), label);
+            ColumnControl columnNode = new ColumnControl(vboxColumns, column, new ISelectedListener()
+            {
+                
+                @Override
+                public void select(boolean selected, Object source, Object data)
+                {
+                    m_selectedListener.select(selected, TableNode.this, ((ColumnControl)source).getName());
+                }
+                
+                @Override
+                public void highlight(boolean highlighted, Object data)
+                {
+                    
+                }
+            });
+            m_rows.put(column.getName(), columnNode);
         }
     }
 
@@ -81,12 +91,12 @@ public class TableNode extends UserControl
     
     public Point2D getConnectionPoint(String column)
     {
-        Label row = m_rows.get(column);
+        ColumnControl row = m_rows.get(column);
         if (row == null){
             return this.localToScene(0, 0);
         }
-        Point2D columnPoint = row.localToScene(new Point2D(0,0));
-        columnPoint = new Point2D(columnPoint.getX(), columnPoint.getY() + row.getHeight()/2);
+        Point2D columnPoint = row.getLabel().localToScene(new Point2D(0,0));
+        columnPoint = new Point2D(columnPoint.getX(), columnPoint.getY() + row.getLabel().getHeight()/2);
         Point2D rootPoint = scrollPane.localToScene(new Point2D(0,0));
         
         double yPosition = columnPoint.getY();
@@ -97,6 +107,10 @@ public class TableNode extends UserControl
             yPosition = rootPoint.getY();
         }
         return new Point2D(0,yPosition);
+    }
+    
+    public String getName(){
+        return m_model.getName();
     }
     
     @Override
@@ -111,7 +125,7 @@ public class TableNode extends UserControl
     }
     
     protected void setSelecting(boolean selected){
-        m_selectedListener.select(selected, null);
+        m_selectedListener.highlight(selected, null);
     }
 
     @Override
@@ -128,6 +142,10 @@ public class TableNode extends UserControl
         else{
             removeShadow();
         }
+    }
+    
+    public void selectColumn(boolean select, String name){
+        m_rows.get(name).setSelected(select);
     }
 }
 

@@ -130,7 +130,7 @@ public class FileNode extends UserControl
     @Override
     protected void setSelecting(boolean selected)
     {
-        m_selectedListener.select(selected, m_model.getSourceTables());
+        m_selectedListener.highlight(selected, m_model.getSourceTables());
     }
 }
 

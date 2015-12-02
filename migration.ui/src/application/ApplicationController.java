@@ -154,7 +154,6 @@ public class ApplicationController {
 			stage.initOwner(m_stage);
 			((SettingsController)fxmlLoader.getController()).setStage(stage);
 			stage.show();
-			
 			/*
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Settings.fxml"));
 			Parent root1 = (Parent) fxmlLoader.load();
@@ -190,9 +189,15 @@ public class ApplicationController {
                         ISelectedListener listener = new ISelectedListener()
                         {
                             @Override
-                            public void select(boolean selected, Object data)
+                            public void select(boolean selected, Object source, Object data)
                             {
-                                m_rdbEditor.highlightTables((List<String>)data, selected);
+                                
+                            }
+
+                            @Override
+                            public void highlight(boolean highlighted, Object data)
+                            {
+                                m_rdbEditor.highlightTables((List<String>)data, highlighted);
                             }
                         };
                         for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){

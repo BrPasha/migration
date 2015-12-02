@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import editors.controls.SelectionColumn;
 import editors.controls.TableNode;
 import editors.controls.VisualLink;
 import javafx.scene.Node;
@@ -31,6 +32,7 @@ public class RDBEditor
     private RDBStructure m_structure;
     private Map<String, TableNode> m_tables = new HashMap<String, TableNode>();
     private Map<String, List<VisualLink>> m_links = new HashMap<String, List<VisualLink>>();
+    private SelectionColumn m_selectedColumn = null;
     
     public RDBEditor(Pane pane)
     {
@@ -94,12 +96,34 @@ public class RDBEditor
         {
             
             @Override
-            public void select(boolean selected, Object data)
+            public void select(boolean selected, Object source, Object data)
+            {
+                SelectionColumn column = new SelectionColumn((String)data, (TableNode)source);
+                if (selected){
+                    if(m_selectedColumn == null){
+                        m_selectedColumn= column;
+                        m_selectedColumn.getTable().selectColumn(true, m_selectedColumn.getColumn());
+                    }
+                    else{
+                        if (!(m_selectedColumn.getTable().getName().equals(column.getTable().getName()))){
+                            
+                        }
+                        else{
+                            m_selectedColumn.getTable().selectColumn(false, m_selectedColumn.getColumn());
+                            column.getTable().selectColumn(true, column.getColumn());
+                            m_selectedColumn = column;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void highlight(boolean highlighted, Object data)
             {
                 List<VisualLink> links = m_links.get(model.getName());
                 if (links != null){
                     for(VisualLink link:links){
-                        link.setSelected(selected);
+                        link.setSelected(highlighted);
                     }
                 }
             }

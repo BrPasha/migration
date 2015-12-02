@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="200.0" style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="200.0" minWidth="70.0" style="-fx-background-color: #2D7EBE;" styleClass="table-node" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
     <bottom>
        <VBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
           <children>
@@ -30,15 +30,15 @@
     <center>
        <AnchorPane BorderPane.alignment="CENTER">
           <children>
-             <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" style="-fx-background: #2D7EBE; -fx-border-color: #2D7EBE;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+             <ScrollPane fx:id="scrollPane" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: #2D7EBE; -fx-border-color: #2D7EBE;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                 <content>
-                   <VBox fx:id="vboxColumns" alignment="TOP_CENTER" style="-fx-background-color: #2D7EBE;">
+                   <VBox fx:id="vboxColumns" alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" style="-fx-background-color: #2D7EBE;">
                       <children>
-                         <Label text="Label" textFill="WHITE" />
+                         <Label alignment="CENTER" text="Label" textAlignment="CENTER" textFill="WHITE" VBox.vgrow="ALWAYS" />
                       </children>
-                      <padding>
-                         <Insets left="20.0" right="20.0" />
-                      </padding>
+                     <padding>
+                        <Insets left="1.0" right="1.0" />
+                     </padding>
                    </VBox>
                 </content>
              </ScrollPane>
