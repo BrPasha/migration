@@ -15,6 +15,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Collections2;
 
@@ -343,7 +344,10 @@ public class Transfer {
 				mvFields.add(mvField);
 			}
 		}
-		return new MVFile(m_baseTable.getName(), mvFields);
+		return new MVFile(m_baseTable.getName(), mvFields,
+				Stream.concat(Stream.of(m_baseTable.getName()), 
+				m_embeddedTables.stream().map(tt -> tt.getName()))
+						.collect(Collectors.toList()));
 	}
 
 	private String constructUniqueName(Set<String> usedColumnNames, RDBColumn column) {
