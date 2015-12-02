@@ -145,7 +145,7 @@ public class Transfer {
 	}
 	
 	private static long countRelations(RDBTable table, List<RDBRelation> relations) {
-		return relations.stream().filter(r -> r.getTable1().equals(table.getName()) || r.getTable2().equals(table.getName())).count();
+		return relations.stream().filter(r -> r.match(table.getName())).count();
 	}
 	
 	public static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
