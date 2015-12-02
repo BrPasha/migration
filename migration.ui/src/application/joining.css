@@ -1,0 +1,76 @@
+/* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+*{
+   -fx-main-background: #0B2D5A;
+   -fx-buttonhover-background: #0099FF;
+}
+
+.label-title{
+	-fx-text-fill: white;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 16;
+}
+
+.label-text{
+	-fx-text-fill: white;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 18;
+	-fx-background-color: -fx-buttonhover-background;
+	-fx-pref-width: 180; 
+}
+
+
+.button-cancel {
+	-fx-background-color: -fx-main-background; 
+	/*
+	-fx-background-radius: 0;
+	-fx-border-radius: 0;
+	*/
+	-fx-border-color: white; 
+	-fx-border-width: 2;
+	-fx-text-fill: white;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 18;
+	-fx-pref-width: 100.0;
+	-fx-pref-height: 20.0;
+}
+
+.button-cancel:hover{
+	-fx-background-color: -fx-buttonhover-background;
+}
+
+.combo {
+	-fx-background-color: -fx-main-background;
+	-fx-text-fill: white;
+	-fx-border-color: white;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 18;
+	-fx-pref-height: 18.0;
+	-fx-pref-width: 380;
+}
+
+.combo .list-view {
+    -fx-background-color: -fx-main-background, -fx-buttonhover-background;
+    -fx-text-fill: white;
+}
+
+.combo .list-view .list-cell {
+    -fx-background-color: -fx-main-background;
+    -fx-text-fill: white;
+}
+
+.combo .cell {
+    -fx-background-color: -fx-main-background;
+    -fx-text-fill: white;
+}
+
+.combo .list-view .list-cell:filled:selected, .combo .list-view .list-cell:filled:selected:hover {
+    -fx-background: -fx-buttonhover-background;
+    -fx-background-color: -fx-buttonhover-background;
+    -fx-text-fill: white;
+}
+
+.combo .list-view .list-cell:filled:hover {
+    -fx-background-color: -fx-buttonhover-background;
+    -fx-text-fill: white;
+}
+

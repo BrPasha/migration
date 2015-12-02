@@ -2,6 +2,8 @@ package application;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -20,7 +22,7 @@ public class SettingsController implements Initializable  {
 	private final String DEFAULT_USERNAME_TEXT = "Username ...";
 	private final String DEFAULT_PSWD_TEXT = "Password ...";
 	
-	private DatabasesSettings dbSettings = new DatabasesSettings();
+	private DatabasesSettings dbSettings;// = new DatabasesSettings();
 	
 	@FXML
 	private Button btn_OK;
@@ -52,15 +54,28 @@ public class SettingsController implements Initializable  {
 	
 	private Stage m_stage;
 	
+	private ApplicationController parentController;
+	private SettingsListener settingsListener;
+	
 	public void setStage(Stage stage){
         this.m_stage = stage;
     }
 	
+	public void setParentController(ApplicationController appC){
+		this.parentController = appC;
+	}
+	
+	public void setDBSettings(DatabasesSettings db){
+		this.dbSettings = db;
+	}
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		initializeDefaultValues();
+		//dbSettings = parentController.getDBSettings();
+//		initializeDefaultValues(dbSettings);
 		
 		setFocusListeners();
+		
 	}
 	
 	@FXML
@@ -86,20 +101,23 @@ public class SettingsController implements Initializable  {
 		dbSettings.setMVPsw(txt_mv_pswd.getText());
 		
 		m_stage.close();
+		
+		settingsListener.onApply(dbSettings);
 	}
 	
-	private void initializeDefaultValues(){
-		txt_r_host.setText(dbSettings.getRHost());
-		txt_r_port.setText(dbSettings.getRPort().toString());
-		txt_r_dbname.setText(dbSettings.getRDBName());
-		txt_r_user.setText(dbSettings.getRUser());
-		txt_r_pswd.setText(dbSettings.getRPsw());
+	public void initializeDefaultValues(DatabasesSettings settings){
+		dbSettings = settings;
+		txt_r_host.setText(settings.getRHost());
+		txt_r_port.setText(settings.getRPort().toString());
+		txt_r_dbname.setText(settings.getRDBName());
+		txt_r_user.setText(settings.getRUser());
+		txt_r_pswd.setText(settings.getRPsw());
 		
-		txt_mv_host.setText(dbSettings.getMVHost());
-		txt_mv_port.setText(dbSettings.getMVPort().toString());
-		txt_mv_account.setText(dbSettings.getMVAccount());
-		txt_mv_user.setText(dbSettings.getMVUser());
-		txt_mv_pswd.setText(dbSettings.getMVPsw());
+		txt_mv_host.setText(settings.getMVHost());
+		txt_mv_port.setText(settings.getMVPort().toString());
+		txt_mv_account.setText(settings.getMVAccount());
+		txt_mv_user.setText(settings.getMVUser());
+		txt_mv_pswd.setText(settings.getMVPsw());
 	}
 	
 	private void setDefaultValuesForTexts(){
@@ -132,15 +150,15 @@ public class SettingsController implements Initializable  {
 	
 	@FXML
 	private void txt_keyTyped(){
-		if ( !txt_mv_host.getText().equals(DEFAULT_HOST_TEXT) 
-				&& !txt_mv_account.getText().equals(DEFAULT_MV_ACCOUNT_TEXT) 
-				&& !txt_mv_port.getText().equals(DEFAULT_PORT_TEXT)
-				&& !txt_mv_user.getText().equals(DEFAULT_USERNAME_TEXT) 
-				&& !txt_mv_pswd.getText().isEmpty()
-				&& !txt_r_host.getText().equals(DEFAULT_HOST_TEXT)
-				&& !txt_r_port.getText().equals(DEFAULT_PORT_TEXT)
-				&& !txt_r_dbname.getText().equals(DEFAULT_R_DBNAME_TEXT)
-				&& !txt_r_user.getText().equals(DEFAULT_USERNAME_TEXT) 
+		if ( !txt_mv_host.getText().equals(DEFAULT_HOST_TEXT) && !txt_mv_host.getText().isEmpty()
+				&& !txt_mv_account.getText().equals(DEFAULT_MV_ACCOUNT_TEXT) && !txt_mv_account.getText().isEmpty()
+				&& !txt_mv_port.getText().equals(DEFAULT_PORT_TEXT) && !txt_mv_port.getText().isEmpty()
+				&& !txt_mv_user.getText().equals(DEFAULT_USERNAME_TEXT) && !txt_mv_user.getText().isEmpty()
+				&& !txt_mv_pswd.getText().isEmpty() 
+				&& !txt_r_host.getText().equals(DEFAULT_HOST_TEXT) && !txt_r_host.getText().isEmpty()
+				&& !txt_r_port.getText().equals(DEFAULT_PORT_TEXT) && !txt_r_port.getText().isEmpty()
+				&& !txt_r_dbname.getText().equals(DEFAULT_R_DBNAME_TEXT) && !txt_r_dbname.getText().isEmpty()
+				&& !txt_r_user.getText().equals(DEFAULT_USERNAME_TEXT) && !txt_r_user.getText().isEmpty() 
 				&& !txt_r_pswd.getText().isEmpty()
 				) 
 			btn_OK.disableProperty().set(false);
@@ -148,5 +166,7 @@ public class SettingsController implements Initializable  {
 			btn_OK.disableProperty().set(true);
 	}
 	
-	
+	public void addSettingsListener(SettingsListener listener) {
+		this.settingsListener = listener;
+	}
 }

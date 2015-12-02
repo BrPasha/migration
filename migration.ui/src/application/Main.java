@@ -28,19 +28,6 @@ public class Main extends Application {
 			primaryStage.setTitle("Migration Tool");
 			primaryStage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			primaryStage.show();
-			
-			Task<Void> task = new Task<Void>()
-            {
-                @Override
-                protected Void call()
-                    throws Exception
-                {
-                    controller.showTables();
-                    return null;
-                }
-            };
-            ProgressForm.showProgress(task, primaryStage);
-            
 
 		} catch(Exception e) {
 			e.printStackTrace();

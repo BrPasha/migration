@@ -1,8 +1,8 @@
 package application;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import editors.database.ISelectedListener;
 import editors.database.MVEditor;
@@ -10,6 +10,7 @@ import editors.database.RDBEditor;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -19,6 +20,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
@@ -32,6 +34,7 @@ import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
 import migration.core.model.transfer.Transfer;
+import migration.core.util.TransferSet;
 
 public class ApplicationController {
     
@@ -62,17 +65,30 @@ public class ApplicationController {
 	
 	@FXML
 	private Button btn_Export;
-
+	
+	@FXML 
+    private TextArea lbl_Factor;
+	
+	private List<Double> m_weights;
+	private List<Integer> m_filesCount;
     
     public void setStage(Stage stage){
         this.m_stage = stage;
+    }
+    
+    public TabPane getRDBPane(){
+    	return rdbTabPane;
+    }
+    
+    public DatabasesSettings getDBSettings(){
+    	return this.dbSettings;
     }
     
     public void showTables() throws ProviderException{
         String dbName = dbSettings.getRDBName();
         final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
         		dbName, dbSettings.getRUser(), dbSettings.getRPsw());
-        
+        /**/
         final List<RDBTable> tabels = client.getTables();
         final List<RDBRelation> relations = client.getRelations();
         
@@ -104,6 +120,8 @@ public class ApplicationController {
     
     private Pane addNewTab(String name, TabPane tab, ChangeListener<Number> listener){
         if (tab != null){
+        	System.out.println("!!!! " + tab.getTabs().size());
+        	//if (tab.getTabs().size() == 0) {
             Tab newTab = new Tab(name);
             AnchorPane aPane = new AnchorPane();
             newTab.setContent(aPane);
@@ -134,14 +152,43 @@ public class ApplicationController {
             
             pane.setMinSize(200, 200);
             return pane;
+            /*}
+        	
+        	else {
+        		tab.getTabs().clear();
+        	}
+        	*/
         }
         return null;
+    }
+    
+    @FXML
+    private void btn_Info_clicked(){
+    	try {
+			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Joining.fxml"));
+			BorderPane root = (BorderPane)fxmlLoader.load();
+    		Scene scene = new Scene(root, 500, 350);
+			scene.getStylesheets().add(getClass().getResource("joining.css").toExternalForm());
+			Stage stage = new Stage();
+			stage.setScene(scene);
+			stage.setResizable(false);
+			stage.setTitle("Join types");
+			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
+			stage.initModality(Modality.WINDOW_MODAL);
+			stage.initOwner(m_stage);
+			((JoiningController)fxmlLoader.getController()).setStage(stage);
+			stage.show();
+    	}
+    	catch(Exception e) {
+    	       e.printStackTrace();
+        }
     }
     
     @FXML
 	private void btn_Settings_clicked(){
     	try {
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Settings.fxml"));
+			//((SettingsController)fxmlLoader.getController()).setDBSettings(dbSettings);
 			BorderPane root = (BorderPane)fxmlLoader.load();
     		Scene scene = new Scene(root, 800, 600);
 			scene.getStylesheets().add(getClass().getResource("settings.css").toExternalForm());
@@ -152,7 +199,17 @@ public class ApplicationController {
 			stage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
 			stage.initModality(Modality.WINDOW_MODAL);
 			stage.initOwner(m_stage);
-			((SettingsController)fxmlLoader.getController()).setStage(stage);
+			SettingsController settingsController = (SettingsController)fxmlLoader.getController();
+			settingsController.setStage(stage);
+			settingsController.setParentController(this);
+			settingsController.initializeDefaultValues(dbSettings);
+			settingsController.addSettingsListener(new SettingsListener() {
+				@Override
+				public void onApply(DatabasesSettings settings) {
+					dbSettings = settings;
+					submitShowTables();
+				}
+			});
 			stage.show();
 			/*
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Settings.fxml"));
@@ -167,7 +224,21 @@ public class ApplicationController {
       }
     }
     
-    @FXML
+    protected void submitShowTables() {
+    	Task<Void> task = new Task<Void>()
+        {
+            @Override
+            protected Void call()
+                throws Exception
+            {
+                showTables();
+                return null;
+            }
+        };
+        ProgressForm.showProgress(task, m_stage);
+	}
+
+	@FXML
     private void onActionMigrate(ActionEvent e){
         Task<Void> task = new Task<Void>()
         {
@@ -176,7 +247,7 @@ public class ApplicationController {
                 throws Exception
             {
                 RDBStructure structure = m_rdbEditor.getStructure();
-                List<Set<Transfer>> transformations = Transfer.proposeTransformations(structure);
+                List<TransferSet> transformations = Transfer.proposeTransformations(structure);
                 
                 Platform.runLater(new Runnable()
                 {
@@ -200,11 +271,18 @@ public class ApplicationController {
                                 m_rdbEditor.highlightTables((List<String>)data, highlighted);
                             }
                         };
+                        m_weights = new ArrayList<>();
+                        m_filesCount = new ArrayList<>();
                         for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){
-                            Set<Transfer> variant = transformations.get(i);
+                            TransferSet variant = transformations.get(i);
+                            m_weights.add(variant.getWeight(structure));
                             List<MVFile> files = new ArrayList<MVFile>();
                             for (Transfer transfer : variant){
                                 files.add(transfer.constructMVFile());
+                            }
+                            m_filesCount.add(files.size());
+                            if (i == 0) {
+                            	lbl_Factor.setText(getInformation(i));
                             }
                             ChangeListener<Number> resizeListenerMV = new ChangeListener<Number>()
                             {
@@ -217,7 +295,7 @@ public class ApplicationController {
                                     }
                                 }
                             };
-                            Pane pane = addNewTab("VARIANT " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
+                            Pane pane = addNewTab("OPTION " + Integer.toString(i+1), mvTabPane, resizeListenerMV);
                             MVEditor editor = new MVEditor(pane, listener);
                             editor.setData(files);
                             m_mvEditors.add(editor);
@@ -233,4 +311,21 @@ public class ApplicationController {
         };
         ProgressForm.showProgress(task, m_stage);
     }
+	
+	private String getInformation(int i) {
+		if (m_weights != null) {
+			return MessageFormat.format("{0} tables were packed into {1} files.\nEfficiency factor is {2}",
+					m_rdbEditor.getStructure().getTables().size(), m_filesCount.get(i), m_weights.get(i));
+		}
+		return "";
+	}
+    
+	@FXML
+	private void onTabSelected() {
+		ObservableList<Tab> tabs = mvTabPane.getTabs();
+		for (int i = 0; i < tabs.size(); i++) {
+			if (tabs.get(i).isSelected())
+				lbl_Factor.setText(getInformation(i));
+		}
+	}
 }
