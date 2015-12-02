@@ -3,6 +3,7 @@ package migration.core.model.mv;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import migration.core.db.multivalue.IMVMetadataProvider;
 
@@ -75,11 +76,11 @@ public class MVFile implements IMVMetadataProvider {
 	
 	@Override
 	public MVColumnDepth getDepth(String fieldName) {
-		return MVColumnDepth.resolve(getFields().stream().filter(fld -> fld.getName().equals(fieldName)).findFirst().get().getDepth());
+		return MVColumnDepth.resolve(getFields().stream().filter(fld -> fld.getType().equals("D")).filter(fld -> fld.getName().equals(fieldName)).findFirst().get().getDepth());
 	}
 	
 	@Override
 	public MVColumnDepth getDepth(int fieldIndex) {
-		return MVColumnDepth.resolve(m_columns.get(fieldIndex).getDepth());
+		return MVColumnDepth.resolve(m_columns.stream().filter(fld -> fld.getType().equals("D")).collect(Collectors.toList()).get(fieldIndex).getDepth());
 	}
 }

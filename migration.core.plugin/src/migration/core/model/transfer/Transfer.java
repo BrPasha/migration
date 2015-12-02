@@ -26,8 +26,8 @@ import migration.core.model.rdb.RDBColumn;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
-import migration.core.util.FixedHashCodeSet;
 import migration.core.util.Pair;
+import migration.core.util.TransferSet;
 
 public class Transfer {
 	public static final String DATE_CONF_CODE = "D4/";
@@ -121,11 +121,12 @@ public class Transfer {
 		return result;
 	}
 	
-	public static List<Set<Transfer>> proposeTransformations(RDBStructure structure) {
-		List<Set<Transfer>> transformations = new ArrayList<>();
+	public static List<TransferSet> proposeTransformations(RDBStructure structure) {
+		List<TransferSet> transformations = new ArrayList<>();
 		List<RDBTable> sourceTables = new ArrayList<>(structure.getTables());
 		sourceTables.sort((t1, t2) -> (int)(countRelations(t2, structure.getRelations()) - countRelations(t1, structure.getRelations())));
 		Collection<List<RDBTable>> permutations = Collections2.permutations(structure.getTables());
+		int maxWeight = 7;
 		int count = 0;
 		for (List<RDBTable> tables : permutations) {
 			if (count++ > 2) {
@@ -134,12 +135,15 @@ public class Transfer {
 			LinkedList<RDBTable> remainingTables = new LinkedList<>(tables);
 			if (!remainingTables.isEmpty()) {
 				RDBTable table = remainingTables.pop();
-				List<FixedHashCodeSet<Transfer>> transfers = process(structure, table, remainingTables);
+				List<TransferSet> transfers = process(structure, table, remainingTables);
+				final int finalMaxWeight = maxWeight;
+				transfers = transfers.stream().filter(trset -> trset.getWeight(structure) >= finalMaxWeight).collect(Collectors.toList());
 				transformations.addAll(transfers);
+				maxWeight = (int) getWeight(transfers.stream().max((trset1, trset2) -> (int)(trset1.getWeight(structure) - trset2.getWeight(structure))).get(), structure);
 			}
 		}
-		Set<Set<Transfer>> structures = new HashSet<>(transformations);
-		TreeSet<Set<Transfer>> orderedStructures = new TreeSet<>((o1, o2) -> getWeight(o1, structure) - getWeight(o2, structure) > 0 ? -1 : 1);
+		Set<TransferSet> structures = new HashSet<>(transformations);
+		TreeSet<TransferSet> orderedStructures = new TreeSet<>((o1, o2) -> o1.getWeight(structure) - o2.getWeight(structure) > 0 ? -1 : 1);
 		orderedStructures.addAll(structures);
 		return new ArrayList<>(orderedStructures);
 	}
@@ -148,22 +152,22 @@ public class Transfer {
 		return relations.stream().filter(r -> r.match(table.getName())).count();
 	}
 	
-	public static double getWeight(Set<Transfer> transfers, RDBStructure structure) {
+	public static double getWeight(TransferSet transfers, RDBStructure structure) {
 		return transfers.stream().mapToDouble(transfer -> transfer.weight(structure.getRelations())).sum();
 	}
 	
-	private static List<FixedHashCodeSet<Transfer>> process(RDBStructure structure, RDBTable table, LinkedList<RDBTable> tables) {
+	private static List<TransferSet> process(RDBStructure structure, RDBTable table, LinkedList<RDBTable> tables) {
 		List<RDBTable> related = findRelated(table, tables, structure.getRelations());
-		List<FixedHashCodeSet<Transfer>> result = new ArrayList<>();
+		List<TransferSet> result = new ArrayList<>();
 		if (related.isEmpty()) {
 			Transfer transfer = new Transfer(table, structure);
 			if (!tables.isEmpty()) {
 				LinkedList<RDBTable> remaining = new LinkedList<RDBTable>(tables);
-				List<FixedHashCodeSet<Transfer>> nextTransfers = process(structure, remaining.pop(), remaining);
+				List<TransferSet> nextTransfers = process(structure, remaining.pop(), remaining);
 				nextTransfers.stream().forEach(list -> list.add(transfer));
 				result.addAll(nextTransfers);
 			} else {
-				FixedHashCodeSet<Transfer> nextTransfers = new FixedHashCodeSet<>();
+				TransferSet nextTransfers = new TransferSet();
 				nextTransfers.add(transfer);
 				result.add(nextTransfers);
 			}
@@ -177,14 +181,14 @@ public class Transfer {
 					})
 					.collect(Collectors.toList());
 			result.addAll(usedAndRemaining.stream().map(p -> {
-				List<FixedHashCodeSet<Transfer>> res = new ArrayList<>();
+				List<TransferSet> res = new ArrayList<>();
 				Transfer transfer = new Transfer(table, p.first(), structure);
 				if (!p.second().isEmpty()) {
-					List<FixedHashCodeSet<Transfer>> nextTransfers = process(structure, p.second().pop(), p.second());
+					List<TransferSet> nextTransfers = process(structure, p.second().pop(), p.second());
 					nextTransfers.stream().forEach(list -> list.add(transfer));
 					res.addAll(nextTransfers);
 				} else {
-					FixedHashCodeSet<Transfer> nextTransfers = new FixedHashCodeSet<>();
+					TransferSet nextTransfers = new TransferSet();
 					nextTransfers.add(transfer);
 					res.add(nextTransfers);
 				}
@@ -298,6 +302,7 @@ public class Transfer {
 				mvFields.add(mvField);
 			}
 		}
+		List<MVField> associations = new ArrayList<>();
 		for (RDBTable embeddedTable : m_embeddedTables) {
 			MVColumnDepth depth = resolveDepth(embeddedTable);
 			String associationName = depth == MVColumnDepth.multivalue ? embeddedTable.getName() + "_association" : "";
@@ -321,7 +326,7 @@ public class Transfer {
 								embeddedTable.getName(),
 								column.getName());
 						mvFields.add(mvField);
-						addedColumnNames.add(columnUniqueName);
+						addedColumnNames.add(columnUniqueName + "_date");
 						convCode = TIME_CONV_CODE;
 						format = "";
 						mvField = new MVField(
@@ -337,7 +342,7 @@ public class Transfer {
 								embeddedTable.getName(),
 								column.getName());
 						mvFields.add(mvField);
-						addedColumnNames.add(columnUniqueName);
+						addedColumnNames.add(columnUniqueName + "_time");
 					} else {
 						String convCode = resolveConvCode(column);
 						String format = resolveFormat(column);
@@ -372,9 +377,10 @@ public class Transfer {
 						"", 
 						"", 
 						"");
-				mvFields.add(mvField);
+				associations.add(mvField);
 			}
 		}
+		mvFields.addAll(associations);
 		return new MVFile(m_baseTable.getName(), mvFields,
 				Stream.concat(Stream.of(m_baseTable.getName()), 
 				m_embeddedTables.stream().map(tt -> tt.getName()))
