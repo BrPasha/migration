@@ -74,9 +74,11 @@
             								<Label fx:id="lbl_TitleSourceTable" textAlignment="CENTER"
             									styleClass="label-title" >
         									</Label>
-        									<Label fx:id="lbl_SourceTable" 
-            									styleClass="label-text" translateY="30" >
-        									</Label>
+        									<Pane styleClass="pane-text" translateY="30">
+        										<Label fx:id="lbl_SourceTable" 
+            										styleClass="label-text" translateX="10" >
+        										</Label>
+        									</Pane>
         								</Pane>
         							</top>
         							<center>
@@ -84,9 +86,11 @@
 											<Label fx:id="lbl_TitleSourceColumn" contentDisplay="CENTER" BorderPane.alignment="CENTER" 
             									styleClass="label-title" >
         									</Label>
-        									<Label fx:id="lbl_ColumnSource" contentDisplay="CENTER" BorderPane.alignment="CENTER" 
-        										styleClass="label-text" translateY="30" >
-        									</Label>
+        									<Pane styleClass="pane-text" translateY="30">
+        										<Label fx:id="lbl_ColumnSource" contentDisplay="CENTER" BorderPane.alignment="CENTER" 
+        											styleClass="label-text" translateX="10" >
+        										</Label>
+        									</Pane>
         								</Pane>
         							 </center>
             					</BorderPane>
@@ -97,9 +101,11 @@
             								<Label fx:id="lbl_TitleTargetTable" contentDisplay="CENTER" styleClass="label-title" 
             									BorderPane.alignment="CENTER" >
         									</Label>
-        									<Label fx:id="lbl_TargetTable" prefWidth="200"
-            									styleClass="label-text" translateY="30" >
-        									</Label>
+        									<Pane styleClass="pane-text" translateY="30">
+        										<Label fx:id="lbl_TargetTable" 
+            										styleClass="label-text" translateX="10" >
+        										</Label>
+        									</Pane>
         								</Pane>
         							</top>
         							<center> 
@@ -107,9 +113,11 @@
         									<Label fx:id="lbl_TitleTargetColumn" contentDisplay="CENTER" BorderPane.alignment="CENTER" 
             									styleClass="label-title" >
         									</Label>
-        									<Label fx:id="lbl_ColumnTarget" contentDisplay="CENTER" styleClass="label-text" 
-        										BorderPane.alignment="CENTER" translateY="30">
-        									</Label>
+        									<Pane styleClass="pane-text" translateY="30">
+        										<Label fx:id="lbl_ColumnTarget" contentDisplay="CENTER" styleClass="label-text" 
+        											BorderPane.alignment="CENTER" translateX="10">
+        										</Label>
+        									</Pane>
         								</Pane>
         							</center>
  								</BorderPane>           					
