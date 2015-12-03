@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.TextInputControl?>
+<?import javafx.scene.control.ComboBox?>
+<?import com.sun.javafx.scene.control.skin.InputField?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.chart.BubbleChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ToggleButton?>
+
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" style="-fx-background-color: -fx-main-background;"
+	prefHeight="200.0" prefWidth="500.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2"
+	fx:controller="application.SuccessDialogController">
+  <top>
+  	<BorderPane prefHeight="80.0" prefWidth="600.0" style="-fx-background-color: -fx-main-background;">
+  		<center>
+        	<Label contentDisplay="CENTER" text="SQL to MultiValue" textFill="WHITE" BorderPane.alignment="CENTER_LEFT" >
+          		<font>
+          			<Font name="Trebuchet MS" size="27.0"></Font>
+          		</font>
+          		<BorderPane.margin>
+            		<Insets left="25.0" />
+          		</BorderPane.margin>
+        	</Label>
+      	</center>
+      	<left>
+        	<ImageView fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" translateX="15.0" BorderPane.alignment="CENTER_RIGHT">
+          		<image>
+	            	<Image url="@../../icon/Rocket25.png" />
+          		</image>
+        	</ImageView>
+      	</left>
+      	<padding>
+        	<Insets bottom="10.0" right="50.0" top="10.0" />
+      	</padding>
+      	<right>
+      		<Label BorderPane.alignment="CENTER_RIGHT" contentDisplay="CENTER" text="Export status" textFill="WHITE" translateX="35">
+          		<font>
+            		<Font name="Trebuchet MS" size="20.0" />
+          		</font>
+          	</Label>
+          	<BorderPane.margin>
+          		<Insets right="20"></Insets>
+          	</BorderPane.margin>
+      	</right>
+  	</BorderPane>
+  </top>
+  <center>
+  	<BorderPane>
+  		<center>
+  			<Pane >
+  				<Label text="Data are successfully exported!" styleClass = "successText" >
+  				</Label>
+  			</Pane>
+  		</center>
+  		<BorderPane.margin>
+  			<Insets left="100">
+  			</Insets>
+  		</BorderPane.margin>
+  	</BorderPane>
+  </center>
+  <bottom>
+  	<BorderPane >
+    	<right>
+        	<GridPane >
+          		<children>
+          			<Button text="OK" styleClass="button-cancel" 
+          							onMouseClicked="#btn_OkClicked">
+          			</Button>
+          		</children>
+            </GridPane>
+            <BorderPane.margin>
+            	<Insets right="30.0" bottom="20"/>
+            </BorderPane.margin>
+        </right>
+    </BorderPane>
+  </bottom>
+</BorderPane>
