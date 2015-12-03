@@ -46,46 +46,46 @@ public class Data implements IMVResultSet {
 		m_rdbClient = rdbClient;
 	}
 	
-	private String generateBaseTableSql() {
-		StringBuilder strbuf = new StringBuilder();
-		strbuf.append("SELECT ");
-		strbuf.append(String.join(",",
-				m_transfer.getBaseTable().getColumns().stream()
-						.map(col -> col.getName()).collect(Collectors.toList())));
-		strbuf.append(" FROM ");
-		strbuf.append(m_transfer.getBaseTable().getName());
-		strbuf.append(" ORDER BY ");
-		strbuf.append(String.join(",", m_transfer.getBaseTable().getPrimaryKey().getColumns()));
-		return strbuf.toString();
-	}
-	
-	private List<String> generateEmbeddedTablesSql() {
-		List<String> result = new ArrayList<>();
-		for (RDBTable table : m_transfer.getEmbeddedTables()) {
-			RDBRelation relation = Transfer.findRelation(m_transfer.getStructure().getRelations(), m_transfer.getBaseTable(), table);
-			String leftCol = relation.matchFirst(m_transfer.getBaseTable().getName()) ? relation.getColumn1() : relation.getColumn2();
-			String rightCol = relation.matchFirst(m_transfer.getBaseTable().getName()) ? relation.getColumn2() : relation.getColumn1();
-			StringBuilder strbuf = new StringBuilder();
-			strbuf.append("SELECT ");
-			strbuf.append(String.join(",",
-					table.getColumns().stream()
-							.map(col -> "B." + col.getName()).collect(Collectors.toList())));
-			strbuf.append(" FROM ");
-			strbuf.append(m_transfer.getBaseTable().getName());
-			strbuf.append(" A ");
-			strbuf.append(" LEFT JOIN ");
-			strbuf.append(table.getName());
-			strbuf.append(" B ");
-			strbuf.append(" ON ");
-			strbuf.append("A" + "." + leftCol);
-			strbuf.append("=");
-			strbuf.append("B" + "." + rightCol);
-			strbuf.append(" ORDER BY ");
-			strbuf.append("A" + "." + leftCol);
-			result.add(strbuf.toString());
-		}
-		return result;
-	}
+//	private String generateBaseTableSql() {
+//		StringBuilder strbuf = new StringBuilder();
+//		strbuf.append("SELECT ");
+//		strbuf.append(String.join(",",
+//				m_transfer.getBaseTable().getColumns().stream()
+//						.map(col -> col.getName()).collect(Collectors.toList())));
+//		strbuf.append(" FROM ");
+//		strbuf.append(m_transfer.getBaseTable().getName());
+//		strbuf.append(" ORDER BY ");
+//		strbuf.append(String.join(",", m_transfer.getBaseTable().getPrimaryKey().getColumns()));
+//		return strbuf.toString();
+//	}
+//	
+//	private List<String> generateEmbeddedTablesSql() {
+//		List<String> result = new ArrayList<>();
+//		for (RDBTable table : m_transfer.getEmbeddedTables()) {
+//			RDBRelation relation = Transfer.findRelation(m_transfer.getStructure().getRelations(), m_transfer.getBaseTable(), table);
+//			String leftCol = relation.matchFirst(m_transfer.getBaseTable().getName()) ? relation.getColumn1() : relation.getColumn2();
+//			String rightCol = relation.matchFirst(m_transfer.getBaseTable().getName()) ? relation.getColumn2() : relation.getColumn1();
+//			StringBuilder strbuf = new StringBuilder();
+//			strbuf.append("SELECT ");
+//			strbuf.append(String.join(",",
+//					table.getColumns().stream()
+//							.map(col -> "B." + col.getName()).collect(Collectors.toList())));
+//			strbuf.append(" FROM ");
+//			strbuf.append(m_transfer.getBaseTable().getName());
+//			strbuf.append(" A ");
+//			strbuf.append(" LEFT JOIN ");
+//			strbuf.append(table.getName());
+//			strbuf.append(" B ");
+//			strbuf.append(" ON ");
+//			strbuf.append("A" + "." + leftCol);
+//			strbuf.append("=");
+//			strbuf.append("B" + "." + rightCol);
+//			strbuf.append(" ORDER BY ");
+//			strbuf.append("A" + "." + leftCol);
+//			result.add(strbuf.toString());
+//		}
+//		return result;
+//	}
 	
 	private String generateSql() {
 		StringBuilder strbuf = new StringBuilder();
@@ -131,10 +131,6 @@ public class Data implements IMVResultSet {
 	public Record nextRecord(UniSession session, IMVMetadataProvider metadataProvider) throws ProviderException {
 		try {
 			if (m_baseTableResultSet == null) {
-				
-				System.out.println(generateBaseTableSql());
-				System.out.println(generateEmbeddedTablesSql());
-				System.out.println();
 				String sql = generateSql();
 				m_baseTableResultSet = m_rdbClient.executeQuery(sql);
 				if (!m_baseTableResultSet.next()) {

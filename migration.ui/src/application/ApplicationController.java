@@ -358,21 +358,12 @@ public class ApplicationController {
                 UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient(dbSettings.getMVHost(), dbSettings.getMVPort(), dbSettings.getMVUser(), dbSettings.getMVPsw());
                 final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
                     dbSettings.getRDBName(), dbSettings.getRUser(), dbSettings.getRPsw());
-                try{
-                    u2Client.deleteAccount(dbSettings.getMVAccount());
-                }
-                catch(Exception ex){
-                    
-                }
-                try {
-                	u2Client.createAccount(dbSettings.getMVAccount());
-                } catch (Exception ex) {
-                	ex.printStackTrace();
-                }
-                
-                TransferSet transformation1 = m_transfers.get(getSelectedMVTab());
-                transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
-                Plan plan = new Plan(new ArrayList<>(transformation1), client);
+//                if (!u2Client.getAccounts().contains(dbSettings.getMVAccount())) {
+//                	u2Client.createAccount(dbSettings.getMVAccount());
+//                }
+                TransferSet transformation = m_transfers.get(getSelectedMVTab());
+                transformation.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
+                Plan plan = new Plan(new ArrayList<>(transformation), client);
                 while (plan.next()) {
                     MVFile mvFile = plan.getStructure();
                     u2Client.createFile(dbSettings.getMVAccount(), mvFile);

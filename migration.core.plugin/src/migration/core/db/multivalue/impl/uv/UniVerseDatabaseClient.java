@@ -1,6 +1,8 @@
 package migration.core.db.multivalue.impl.uv;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import asjava.uniclientlibs.UniDataSet;
 import asjava.uniclientlibs.UniDynArray;
@@ -115,6 +117,24 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 		}
 	}
 	
+	@Override
+	public List<String> getAccounts() throws MVProviderException {
+		UniSession session = openSession();
+		try {
+			UniDynArray output = invokeXtoolsub(session, XTOOLSUBConstant.GetAccounts, "");
+			List<String> result = new ArrayList<>();
+			for (int i = 1; i <= output.dcount(); i++) {
+				String account = output.extract(i, 1).toString();
+				result.add(account);
+			}
+			return result;
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
+		} finally {
+			closeSession(session);
+		}
+	}
+	
 	private void createAccount(UniSession session, String accountName) throws UniException {
 		UniDynArray params = session.dynArray("");
 		params.replace(1, getU2Home(session) + "\\" + accountName);
@@ -185,10 +205,9 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 				UniDataSet dataSet = session.dataSet();
 				Record record = null;
 				int counter = 0;
-				while ((record = rs.nextRecord(session, metadataProvider)) != null) {
-//					System.out.println(fileName + "" + record.getId());
+				while (counter < 50 && (record = rs.nextRecord(session, metadataProvider)) != null) {
 					dataSet.append(record.getId(), record.getData());
-					if (fileName.equals("customer") && counter++ < 2) {
+					if (fileName.equals("customer") && counter++ < 0) {
 						break;
 					}
 				}
@@ -204,5 +223,23 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			closeSession(session);
 		}
 	}
+
+//	public void deleteDynamicFiles(String accountName) throws MVProviderException {
+//		UniSession session = openSession();
+//		try {
+//			logtoAccount(session, accountName);
+//			UniDynArray output = invokeXtoolsub(session, XTOOLSUBConstant.GetFiles, "");
+//			for (int i = 1; i <= output.dcount(); i++) {
+//				String fileName = output.extract(i, 1).toString();
+//				UniDynArray fileInfo = invokeXtoolsub(session, XTOOLSUBConstant.GetFileTypeInfo, fileName);
+//				System.out.println(fileInfo);
+//			}
+//			System.out.println(output);
+//		} catch (UniException ex) {
+//			throw new MVProviderException(ex);
+//		} finally {
+//			closeSession(session);
+//		}
+//	}
 	
 }

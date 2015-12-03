@@ -1,5 +1,7 @@
 package migration.core.db.multivalue;
 
+import java.util.List;
+
 import migration.core.model.mv.MVFile;
 
 public interface IMVDatabaseClient {
@@ -11,5 +13,7 @@ public interface IMVDatabaseClient {
 	void createFile(String accountName, MVFile fileModel) throws MVProviderException;
 	
 	void exportData(String accountName, String fileName, IMVMetadataProvider metadataProvider, IMVResultSet rs) throws MVProviderException;
+
+	List<String> getAccounts() throws MVProviderException;
 	
 }
