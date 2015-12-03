@@ -395,6 +395,6 @@ public class ApplicationController {
             }
             
         };
-        ProgressForm.showProgress(task, m_stage, 1F);
+        ProgressFormWithText.showProgress(task, m_stage, 0F);
     }
 }
