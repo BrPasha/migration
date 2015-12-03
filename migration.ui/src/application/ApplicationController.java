@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import asjava.uniobjects.UniSession;
 import editors.database.ISelectedListener;
 import editors.database.JoiningController;
 import editors.database.MVEditor;
@@ -364,13 +365,29 @@ public class ApplicationController {
                 TransferSet transformation = m_transfers.get(getSelectedMVTab());
                 transformation.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
                 Plan plan = new Plan(new ArrayList<>(transformation), client);
-                while (plan.next()) {
-                    MVFile mvFile = plan.getStructure();
-                    u2Client.createFile(dbSettings.getMVAccount(), mvFile);
-                    try (Data data = plan.getData()) {
-                        u2Client.exportData(dbSettings.getMVAccount(), mvFile.getName(), mvFile, data);
-                    }
+                UniSession session = u2Client.connect(dbSettings.getMVAccount());
+                long start = System.currentTimeMillis();
+                try {
+	                while (plan.next()) {
+	                	long startFile = System.currentTimeMillis();
+	                    MVFile mvFile = plan.getStructure();
+	                    u2Client.createFile(session, mvFile);
+	                    long endFile = System.currentTimeMillis();
+	                    System.out.println("Elapsed time (create file " + mvFile.getName() + "): " + (endFile - startFile) / 1000);
+	                    long startExport = System.currentTimeMillis();
+	                    if (!mvFile.getName().equals("customer")){
+		                    try (Data data = plan.getData()) {
+		                    	u2Client.exportData(session, mvFile.getName(), mvFile, data);
+		                    }
+	                    }
+	                    long endExport = System.currentTimeMillis();
+	                    System.out.println("Elapsed time (export file " + mvFile.getName() + "): " + (endExport - startExport) / 1000);
+	                }
+                } finally {
+                	u2Client.disconnect(session);
                 }
+                long end = System.currentTimeMillis();
+                System.out.println("Elapsed time: " + (end - start) / 1000);
                 return null;
             }
             

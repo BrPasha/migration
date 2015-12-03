@@ -165,33 +165,38 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 		}
 	}
 
-	private void createFile(UniSession session, MVFile fileModel) throws UniException {
-		UniDynArray param = session.dynArray("");
-		param.replace(1, fileModel.getName()); // File Name
-		param.replace(2, "DYNAMIC"); // File Type
-		param.replace(3, "1"); // Minimum Modulus
-		param.replace(4, "1"); // Group Size
-		param.replace(5, "80"); // Large Record
-		param.replace(6, "80"); // Split Load
-		param.replace(7, "50"); // Merge Load
-		param.replace(8, "GENERAL"); // Hashing Algorithm
-		param.replace(9, "1"); // 64-bit
-		invokeXtoolsub(session, XTOOLSUBConstant.CreateFile, param.toString());
-		UniDictionary dict = session.openDict(fileModel.getName());
+	@Override
+	public void createFile(UniSession session, MVFile fileModel) throws MVProviderException {
 		try {
-			for (MVField fieldModel : fileModel.getFields()) {
-				UniDynArray fieldDescription = session.dynArray("");
-				fieldDescription.replace(1, fieldModel.getType());
-				fieldDescription.replace(2, fieldModel.getType().startsWith("D") ? fieldModel.getLocation() : fieldModel.getDef());
-				fieldDescription.replace(3, fieldModel.getConvCode());
-				fieldDescription.replace(4, fieldModel.getHeading());
-				fieldDescription.replace(5, fieldModel.getFormat());
-				fieldDescription.replace(6, fieldModel.getDepth());
-				fieldDescription.replace(7, fieldModel.getAssoc());
-				dict.write(fieldModel.getName(), fieldDescription);
+			UniDynArray param = session.dynArray("");
+			param.replace(1, fileModel.getName()); // File Name
+			param.replace(2, "DYNAMIC"); // File Type
+			param.replace(3, "1"); // Minimum Modulus
+			param.replace(4, "1"); // Group Size
+			param.replace(5, "80"); // Large Record
+			param.replace(6, "80"); // Split Load
+			param.replace(7, "50"); // Merge Load
+			param.replace(8, "GENERAL"); // Hashing Algorithm
+			param.replace(9, "1"); // 64-bit
+			invokeXtoolsub(session, XTOOLSUBConstant.CreateFile, param.toString());
+			UniDictionary dict = session.openDict(fileModel.getName());
+			try {
+				for (MVField fieldModel : fileModel.getFields()) {
+					UniDynArray fieldDescription = session.dynArray("");
+					fieldDescription.replace(1, fieldModel.getType());
+					fieldDescription.replace(2, fieldModel.getType().startsWith("D") ? fieldModel.getLocation() : fieldModel.getDef());
+					fieldDescription.replace(3, fieldModel.getConvCode());
+					fieldDescription.replace(4, fieldModel.getHeading());
+					fieldDescription.replace(5, fieldModel.getFormat());
+					fieldDescription.replace(6, fieldModel.getDepth());
+					fieldDescription.replace(7, fieldModel.getAssoc());
+					dict.write(fieldModel.getName(), fieldDescription);
+				}
+			} finally {
+				dict.close();
 			}
-		} finally {
-			dict.close();
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
 		}
 	}
 
@@ -224,22 +229,46 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 		}
 	}
 
-//	public void deleteDynamicFiles(String accountName) throws MVProviderException {
-//		UniSession session = openSession();
-//		try {
-//			logtoAccount(session, accountName);
-//			UniDynArray output = invokeXtoolsub(session, XTOOLSUBConstant.GetFiles, "");
-//			for (int i = 1; i <= output.dcount(); i++) {
-//				String fileName = output.extract(i, 1).toString();
-//				UniDynArray fileInfo = invokeXtoolsub(session, XTOOLSUBConstant.GetFileTypeInfo, fileName);
-//				System.out.println(fileInfo);
-//			}
-//			System.out.println(output);
-//		} catch (UniException ex) {
-//			throw new MVProviderException(ex);
-//		} finally {
-//			closeSession(session);
-//		}
-//	}
+	@Override
+	public UniSession connect(String accountName) throws MVProviderException {
+		UniSession session = openSession();
+		try {
+			logtoAccount(session, accountName);
+			return session;
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
+		}
+	}
+	
+	@Override
+	public void disconnect(UniSession session) throws MVProviderException {
+		closeSession(session);
+	}
+	
+	@Override
+	public void exportData(UniSession session, String fileName, IMVMetadataProvider metadataProvider, IMVResultSet rs)
+			throws MVProviderException {
+		try {
+			UniFile file = session.openFile(fileName);
+			try {
+				UniDataSet dataSet = session.dataSet();
+				Record record = null;
+				int counter = 0;
+				while (counter < 50 && (record = rs.nextRecord(session, metadataProvider)) != null) {
+					dataSet.append(record.getId(), record.getData());
+					if (fileName.equals("customer") && counter++ < 0) {
+						break;
+					}
+				}
+				file.write(dataSet);
+			} finally {
+				file.close();
+			}
+		} catch (ProviderException ex) {
+			throw new MVProviderException(ex);
+		} catch (UniException ex) {
+			throw new MVProviderException(ex);
+		}
+	}
 	
 }
