@@ -35,7 +35,6 @@ public class FileNode extends UserControl
     private static final String COLUMN_TYPE = "type";
     private static final String COLUMN_DEPTH = "depth";
     private static final String COLUMN_CONVERSION_CODE = "convCode";
-    private static final String COLUMN_TABLE = "sourceTable";
     
     private ISelectedListener m_selectedListener;
     private MVFile m_model;
@@ -60,9 +59,6 @@ public class FileNode extends UserControl
     
     @FXML
     private TableColumn<MVField, String> columnConversionCode;
-    
-    @FXML
-    private TableColumn<MVField, String> columnTable;
 
     @FXML
     private void initialize() {
@@ -83,7 +79,6 @@ public class FileNode extends UserControl
         columnType.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_TYPE));
         columnConversionCode.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_CONVERSION_CODE));
         columnDepth.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_DEPTH));
-        columnTable.setCellValueFactory(new PropertyValueFactory<MVField, String>(COLUMN_TABLE));
     }
     
     private ObservableList<MVField> fields = FXCollections.observableArrayList();
@@ -102,17 +97,9 @@ public class FileNode extends UserControl
             @Override
             public void changed(ObservableValue<? extends Number> source, Number oldWidth, Number newWidth)
             {
-//                Pane header = (Pane) tableFields.lookup("TableHeaderRow");
-//                header.setStyle("-fx-background-color: #669933;");
-//                if (header.isVisible()){
-//                    header.setMaxHeight(0);
-//                    header.setMinHeight(0);
-//                    header.setPrefHeight(0);
-//                    header.setVisible(false);
-//                }
+                tableFields.layout();
             }
         });
-
     }
 
     @Override

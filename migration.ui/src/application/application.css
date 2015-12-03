@@ -196,6 +196,7 @@
   -fx-padding: 1em;
 }
 
+
 /****************************************************************
  
   ScrollBar Skin  
@@ -238,12 +239,12 @@
 .scroll-bar:vertical .increment-button, .scroll-bar:vertical .decrement-button {
  -fx-background-color:transparent;
  -fx-background-radius: 2em;
- -fx-padding: 5;
+ -fx-padding: 4;
 }
 .scroll-bar:horizontal .increment-button, .scroll-bar:horizontal .decrement-button {
  -fx-background-color:transparent;
  -fx-background-radius: 2em;
- -fx-padding: 5;
+ -fx-padding: 4;
 }
 .scroll-bar:horizontal .increment-arrow {
  -fx-shape: "M 0 0 L 4 8 L 8 0 Z";
@@ -271,7 +272,7 @@
 }
 .scroll-bar:vertical:focused,
 .scroll-bar:horizontal:focused {
- -fx-background-color: transparent,rgb(96,96,96),rgb(96,96,96);
+ -fx-background-color: #669933,rgb(96,96,96),rgb(96,96,96);
 }
 
 .scroll-bar:vertical > .increment-button, 
@@ -285,4 +286,8 @@
 
 .table-fields .scroll-bar{
 	-fx-background-color:  #669933;
+}
+
+.table-row-cell {
+  -fx-background-color: #669933;
 }
