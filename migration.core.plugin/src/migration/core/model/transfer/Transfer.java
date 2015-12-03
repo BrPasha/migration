@@ -472,6 +472,9 @@ public class Transfer {
 		case Types.CLOB:
 			convCode = "";
 			break;
+		case Types.BLOB:
+			convCode = "BB";
+			break;
 		case Types.TIME:
 			convCode = TIME_CONV_CODE;
 			break;
