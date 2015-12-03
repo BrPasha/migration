@@ -28,12 +28,15 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import migration.core.db.multivalue.impl.uv.UniVerseDatabaseClient;
 import migration.core.db.relational.ProviderException;
 import migration.core.db.relational.impl.mysql.MySqlDatabaseClient;
 import migration.core.model.mv.MVFile;
 import migration.core.model.rdb.RDBRelation;
 import migration.core.model.rdb.RDBStructure;
 import migration.core.model.rdb.RDBTable;
+import migration.core.model.transfer.Data;
+import migration.core.model.transfer.Plan;
 import migration.core.model.transfer.Transfer;
 import migration.core.util.TransferSet;
 
@@ -72,6 +75,7 @@ public class ApplicationController {
 	
 	private List<Double> m_weights;
 	private List<Integer> m_filesCount;
+	private List<TransferSet> m_transfers;
     
     public void setStage(Stage stage){
         this.m_stage = stage;
@@ -274,8 +278,10 @@ public class ApplicationController {
                         };
                         m_weights = new ArrayList<>();
                         m_filesCount = new ArrayList<>();
+                        m_transfers = new ArrayList<>();
                         for(int i = 0; i <  MAX_NUMBER_OF_VARIANTS && i <  transformations.size(); i++){
                             TransferSet variant = transformations.get(i);
+                            m_transfers.add(variant);
                             m_weights.add(variant.getWeight(structure));
                             List<MVFile> files = new ArrayList<MVFile>();
                             for (Transfer transfer : variant){
@@ -329,4 +335,51 @@ public class ApplicationController {
 				lbl_Factor.setText(getInformation(i));
 		}
 	}
+	
+	private int getSelectedMVTab(){
+	    ObservableList<Tab> tabs = mvTabPane.getTabs();
+        for (int i = 0; i < tabs.size(); i++) {
+            if (tabs.get(i).isSelected()){
+                return i;
+            }
+        }
+        return 0;
+	}
+	
+	@FXML
+    private void onActionExport(ActionEvent e){
+        Task<Void> task = new Task<Void>()
+        {
+
+            @Override
+            protected Void call()
+                throws Exception
+            {
+                UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient(dbSettings.getMVHost(), dbSettings.getMVPort(), dbSettings.getMVUser(), dbSettings.getMVPsw());
+                final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
+                    dbSettings.getRDBName(), dbSettings.getRUser(), dbSettings.getRPsw());
+                try{
+                    u2Client.deleteAccount(dbSettings.getMVAccount());
+                }
+                catch(Exception ex){
+                    
+                }
+                u2Client.createAccount(dbSettings.getMVAccount());
+                
+                TransferSet transformation1 = m_transfers.get(getSelectedMVTab());
+                transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
+                Plan plan = new Plan(new ArrayList<>(transformation1), client);
+                while (plan.next()) {
+                    MVFile mvFile = plan.getStructure();
+                    u2Client.createFile(dbSettings.getMVAccount(), mvFile);
+                    try (Data data = plan.getData()) {
+                        u2Client.exportData(dbSettings.getMVAccount(), mvFile.getName(), mvFile, data);
+                    }
+                }
+                return null;
+            }
+            
+        };
+        ProgressForm.showProgress(task, m_stage);
+    }
 }
