@@ -12,6 +12,8 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Background?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Label?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
    <top>
@@ -93,7 +95,7 @@
                         <TextArea prefHeight="200.0" prefWidth="200.0" text="" wrapText="true" BorderPane.alignment="CENTER" />
                      </center>
                      <right>
-                		<Button fx:id="btn_Migrate" mnemonicParsing="false" onAction="#onActionMigrate" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="MIGRATE" BorderPane.alignment="CENTER">
+                		<Button fx:id="btn_Migrate" mnemonicParsing="false" onAction="#onActionMigrate" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="BUILD" BorderPane.alignment="CENTER">
                   			<font>
                     			<Font name="Trebuchet MS" size="18.0" />
                   			</font>
@@ -120,11 +122,9 @@
                <bottom>
                   <BorderPane prefHeight="70.0" BorderPane.alignment="CENTER">
                      <center>
-                        <TextArea fx:id="lbl_Factor" editable="false" prefHeight="200.0" prefWidth="200.0" text="" wrapText="true" BorderPane.alignment="CENTER">
-                           <BorderPane.margin>
-                              <Insets />
-                           </BorderPane.margin>
-                        </TextArea>
+                         <Label fx:id="lbl_Factor" text="" BorderPane.alignment="CENTER" 
+                        	styleClass="textArea">
+                         </Label>
                      </center>
                      <right>
                 		<Button fx:id="btn_Export" mnemonicParsing="false" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="EXPORT" BorderPane.alignment="CENTER">

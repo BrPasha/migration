@@ -17,6 +17,15 @@
 	-fx-background-color: -fx-buttonhover-background; 
 }
 
+.textArea{
+	-fx-text-alignment: center;
+	-fx-alignment: center;
+	-fx-font-family: Trebuchet MS;
+	-fx-font-size: 20;
+	-fx-background-color: -fx-main-background;
+	-fx-text-fill: white;
+}
+
 .button-settings{
 	-fx-background-color: -fx-main-background; 
 	-fx-background-radius: 25;

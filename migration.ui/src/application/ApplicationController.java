@@ -17,10 +17,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
@@ -67,7 +67,7 @@ public class ApplicationController {
 	private Button btn_Export;
 	
 	@FXML 
-    private TextArea lbl_Factor;
+	private Label lbl_Factor;
 	
 	private List<Double> m_weights;
 	private List<Integer> m_filesCount;
@@ -120,7 +120,7 @@ public class ApplicationController {
     
     private Pane addNewTab(String name, TabPane tab, ChangeListener<Number> listener){
         if (tab != null){
-        	System.out.println("!!!! " + tab.getTabs().size());
+        	//System.out.println("!!!! " + tab.getTabs().size());
         	//if (tab.getTabs().size() == 0) {
             Tab newTab = new Tab(name);
             AnchorPane aPane = new AnchorPane();
