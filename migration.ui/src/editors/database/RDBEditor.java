@@ -191,6 +191,15 @@ public class RDBEditor
         for (String table:tables){
             TableNode node = m_tables.get(table);
             node.highlight(highlight);
+            List<VisualLink> links = m_links.get(table);
+            if (links != null){
+                for(VisualLink link:links){
+                    if (tables.contains(link.getRelation().getTable1()) && 
+                        tables.contains(link.getRelation().getTable2())){
+                        link.setHighlighted(highlight);
+                    }
+                }
+            }
         }
     }
     
