@@ -41,17 +41,12 @@
          <right>
             <Pane translateY="13">
       				<children> 
-      					<Button fx:id="btn_Info" prefHeight="35.0" prefWidth="36.0" styleClass="button-info" BorderPane.alignment="CENTER_RIGHT"
-      						contentDisplay="RIGHT" mnemonicParsing="false" 
-      						text="i" textAlignment="CENTER" textOverrun="CLIP" 
-      						translateX="25.0" >
+      					<Button fx:id="btn_Info" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="35.0" prefWidth="36.0" styleClass="button-info" text="i" textAlignment="CENTER" textOverrun="CLIP" translateX="25.0" BorderPane.alignment="CENTER_RIGHT">
           					<font>
             					<Font name="Trebuchet MS" size="14.0" style="bold" />
           					</font>
         				</Button>
-        				<Button fx:id="btn_Settings" prefHeight="35.0" prefWidth="36.0" styleClass="button-settings" BorderPane.alignment="CENTER_RIGHT"
-      						contentDisplay="RIGHT" mnemonicParsing="false" 
-      						translateX="-20.0" onMouseClicked="#btn_Settings_clicked" >
+        				<Button fx:id="btn_Settings" contentDisplay="RIGHT" mnemonicParsing="false" onMouseClicked="#btn_Settings_clicked" prefHeight="35.0" prefWidth="36.0" styleClass="button-settings" translateX="-20.0" BorderPane.alignment="CENTER_RIGHT">
         				</Button>
       				</children>
       			</Pane>
@@ -113,7 +108,7 @@
                   </FlowPane>
                </top>
                <center>
-                  <TabPane fx:id="mvTabPane" prefHeight="200.0" prefWidth="200.0" onMouseClicked="#onTabSelected" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+                  <TabPane fx:id="mvTabPane" onMouseClicked="#onTabSelected" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #0A2447;" styleClass="tab-u2" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
                     <BorderPane.margin>
                         <Insets left="20.0" right="30.0" />
                     </BorderPane.margin>
@@ -122,12 +117,11 @@
                <bottom>
                   <BorderPane prefHeight="70.0" BorderPane.alignment="CENTER">
                      <center>
-                         <Label fx:id="lbl_Factor" text="" BorderPane.alignment="CENTER" 
-                        	styleClass="textArea">
+                         <Label fx:id="lbl_Factor" styleClass="textArea" text="" BorderPane.alignment="CENTER">
                          </Label>
                      </center>
                      <right>
-                		<Button fx:id="btn_Export" mnemonicParsing="false" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="EXPORT" BorderPane.alignment="CENTER">
+                		<Button fx:id="btn_Export" mnemonicParsing="false" onAction="#onActionExport" prefHeight="25.0" prefWidth="150.0" styleClass="button-export" text="EXPORT" BorderPane.alignment="CENTER">
                   			<font>
                     			<Font name="Trebuchet MS" size="18.0" />
                   			</font>

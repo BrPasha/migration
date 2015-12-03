@@ -74,18 +74,11 @@ public class VisualLink
         m_lines = construct();
         m_parent.getChildren().add(m_lines);
         m_lines.setStyle(m_selected ? m_selectedStyle : m_baseStyle);
-        if (m_selected){
+        if (m_selected || m_highlighted){
             m_lines.toFront();
             DropShadow shadow = new DropShadow();
             shadow.setRadius(10);
-            shadow.setColor(Color.web("#0099FF"));
-            m_lines.setEffect(shadow);
-        }
-        else if(m_highlighted){
-            m_lines.toFront();
-            DropShadow shadow = new DropShadow();
-            shadow.setRadius(10);
-            shadow.setColor(Color.web("#0099FF"));
+            shadow.setColor(Color.WHITE);
             m_lines.setEffect(shadow);
         }
         else{
@@ -136,6 +129,13 @@ public class VisualLink
     public void setSelected(boolean selected){
         if (m_selected != selected){
             m_selected = selected;
+            update();
+        }
+    }
+    
+    public void setHighlighted(boolean highlighted){
+        if (m_highlighted != highlighted){
+            m_highlighted = highlighted;
             update();
         }
     }
