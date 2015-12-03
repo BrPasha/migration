@@ -25,6 +25,7 @@ import migration.core.model.transfer.Record;
 
 public class UniVerseDatabaseClient implements IMVDatabaseClient {
 
+	private static final int MAX_RECORDS = 50;
 	private static final String DEFAULT_ACCOUNT = "UV";
 	private static final String XTOOLSUB = "*XTOOLSUB";
 
@@ -254,11 +255,8 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 				UniDataSet dataSet = session.dataSet();
 				Record record = null;
 				int counter = 0;
-				while (counter < 50 && (record = rs.nextRecord(session, metadataProvider)) != null) {
+				while (counter++ < MAX_RECORDS && (record = rs.nextRecord(session, metadataProvider)) != null) {
 					dataSet.append(record.getId(), record.getData());
-					if (fileName.equals("customer") && counter++ < 0) {
-						break;
-					}
 				}
 				file.write(dataSet);
 			} finally {
