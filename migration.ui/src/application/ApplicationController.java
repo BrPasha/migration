@@ -241,7 +241,7 @@ public class ApplicationController {
                 return null;
             }
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, -1F);
 	}
 
 	@FXML
@@ -317,7 +317,7 @@ public class ApplicationController {
                 return null;
             }
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, -1F);
     }
 	
 	private String getInformation(int i) {
@@ -356,15 +356,16 @@ public class ApplicationController {
             protected Void call()
                 throws Exception
             {
+            	updateProgress(0, 1F);
                 UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient(dbSettings.getMVHost(), dbSettings.getMVPort(), dbSettings.getMVUser(), dbSettings.getMVPsw());
                 final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
                     dbSettings.getRDBName(), dbSettings.getRUser(), dbSettings.getRPsw());
-//                if (!u2Client.getAccounts().contains(dbSettings.getMVAccount())) {
-//                	u2Client.createAccount(dbSettings.getMVAccount());
-//                }
+                
                 TransferSet transformation = m_transfers.get(getSelectedMVTab());
                 transformation.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
                 Plan plan = new Plan(new ArrayList<>(transformation), client);
+				double work = 0;
+				double step = ((double)(100/transformation.size()))/100;
                 UniSession session = u2Client.connect(dbSettings.getMVAccount());
                 long start = System.currentTimeMillis();
                 try {
@@ -380,6 +381,8 @@ public class ApplicationController {
 		                    	u2Client.exportData(session, mvFile.getName(), mvFile, data);
 		                    }
 	                    }
+	                    work+=step;
+	                    updateProgress(work, 1F);
 	                    long endExport = System.currentTimeMillis();
 	                    System.out.println("Elapsed time (export file " + mvFile.getName() + "): " + (endExport - startExport) / 1000);
 	                }
@@ -392,6 +395,6 @@ public class ApplicationController {
             }
             
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, 1F);
     }
 }

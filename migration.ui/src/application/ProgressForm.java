@@ -24,7 +24,7 @@ public class ProgressForm
     private final Stage dialogStage;
     private final ProgressIndicator pin = new ProgressIndicator();
 
-    public ProgressForm(Stage parentStage) {
+    public ProgressForm(Stage parentStage, double startValue) {
         dialogStage = new Stage();
         dialogStage.initOwner(parentStage);
         dialogStage.initStyle(StageStyle.TRANSPARENT);
@@ -33,7 +33,7 @@ public class ProgressForm
 
         // PROGRESS BAR
         
-        pin.setProgress(-1F);
+        pin.setProgress(startValue);
         pin.setPrefWidth(100);
         pin.setPrefHeight(100);
         final HBox hb = new HBox();
@@ -56,12 +56,13 @@ public class ProgressForm
         return dialogStage;
     }
     
-    public static void showProgress(Task<Void> task, Stage parentStage){
-        final ProgressForm pForm = new ProgressForm(parentStage);
+    public static void showProgress(Task<Void> task, Stage parentStage, double startValue){
+        final ProgressForm pForm = new ProgressForm(parentStage,startValue);
         pForm.activateProgressBar(task);
         task.setOnSucceeded(event -> {
             pForm.getDialogStage().close();
         });
+        
         
         pForm.getDialogStage().show();
 
