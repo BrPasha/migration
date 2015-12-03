@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import asjava.uniobjects.UniSession;
 import editors.database.ISelectedListener;
 import editors.database.JoiningController;
 import editors.database.MVEditor;
@@ -355,36 +356,41 @@ public class ApplicationController {
             protected Void call()
                 throws Exception
             {
+            	updateProgress(0, 1F);
                 UniVerseDatabaseClient u2Client = new UniVerseDatabaseClient(dbSettings.getMVHost(), dbSettings.getMVPort(), dbSettings.getMVUser(), dbSettings.getMVPsw());
                 final MySqlDatabaseClient client = new MySqlDatabaseClient(dbSettings.getRHost(), dbSettings.getRPort(), 
                     dbSettings.getRDBName(), dbSettings.getRUser(), dbSettings.getRPsw());
-                try{
-                    u2Client.deleteAccount(dbSettings.getMVAccount());
-                }
-                catch(Exception ex){
-                    
-                }
-                try {
-                	u2Client.createAccount(dbSettings.getMVAccount());
-                } catch (Exception ex) {
-                	ex.printStackTrace();
-                }
+                
                 TransferSet transformation = m_transfers.get(getSelectedMVTab());
                 transformation.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
                 Plan plan = new Plan(new ArrayList<>(transformation), client);
-                
-                double work = 0;
-                updateProgress(0, 1F);
-                double step = ((double)(100/transformation.size()))/100;
-                while (plan.next()) {
-                    MVFile mvFile = plan.getStructure();
-                    u2Client.createFile(dbSettings.getMVAccount(), mvFile);
-                    try (Data data = plan.getData()) {
-                        u2Client.exportData(dbSettings.getMVAccount(), mvFile.getName(), mvFile, data);
-                    }
-                    work+=step;
-                    updateProgress(work, 1F);
+				double work = 0;
+				double step = ((double)(100/transformation.size()))/100;
+                UniSession session = u2Client.connect(dbSettings.getMVAccount());
+                long start = System.currentTimeMillis();
+                try {
+	                while (plan.next()) {
+	                	long startFile = System.currentTimeMillis();
+	                    MVFile mvFile = plan.getStructure();
+	                    u2Client.createFile(session, mvFile);
+	                    long endFile = System.currentTimeMillis();
+	                    System.out.println("Elapsed time (create file " + mvFile.getName() + "): " + (endFile - startFile) / 1000);
+	                    long startExport = System.currentTimeMillis();
+	                    if (!mvFile.getName().equals("customer")){
+		                    try (Data data = plan.getData()) {
+		                    	u2Client.exportData(session, mvFile.getName(), mvFile, data);
+		                    }
+	                    }
+	                    work+=step;
+	                    updateProgress(work, 1F);
+	                    long endExport = System.currentTimeMillis();
+	                    System.out.println("Elapsed time (export file " + mvFile.getName() + "): " + (endExport - startExport) / 1000);
+	                }
+                } finally {
+                	u2Client.disconnect(session);
                 }
+                long end = System.currentTimeMillis();
+                System.out.println("Elapsed time: " + (end - start) / 1000);
                 return null;
             }
             
