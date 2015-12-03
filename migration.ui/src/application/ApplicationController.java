@@ -240,7 +240,7 @@ public class ApplicationController {
                 return null;
             }
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, -1F);
 	}
 
 	@FXML
@@ -316,7 +316,7 @@ public class ApplicationController {
                 return null;
             }
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, -1F);
     }
 	
 	private String getInformation(int i) {
@@ -373,17 +373,22 @@ public class ApplicationController {
                 TransferSet transformation1 = m_transfers.get(getSelectedMVTab());
                 transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
                 Plan plan = new Plan(new ArrayList<>(transformation1), client);
+                double work = 0;
+                updateProgress(0, 1F);
+                double step = ((double)(100/transformation1.size()))/100;
                 while (plan.next()) {
                     MVFile mvFile = plan.getStructure();
                     u2Client.createFile(dbSettings.getMVAccount(), mvFile);
                     try (Data data = plan.getData()) {
                         u2Client.exportData(dbSettings.getMVAccount(), mvFile.getName(), mvFile, data);
                     }
+                    work+=step;
+                    updateProgress(work, 1F);
                 }
                 return null;
             }
             
         };
-        ProgressForm.showProgress(task, m_stage);
+        ProgressForm.showProgress(task, m_stage, 1F);
     }
 }
