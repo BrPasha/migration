@@ -369,13 +369,13 @@ public class ApplicationController {
                 } catch (Exception ex) {
                 	ex.printStackTrace();
                 }
+                TransferSet transformation = m_transfers.get(getSelectedMVTab());
+                transformation.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
+                Plan plan = new Plan(new ArrayList<>(transformation), client);
                 
-                TransferSet transformation1 = m_transfers.get(getSelectedMVTab());
-                transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
-                Plan plan = new Plan(new ArrayList<>(transformation1), client);
                 double work = 0;
                 updateProgress(0, 1F);
-                double step = ((double)(100/transformation1.size()))/100;
+                double step = ((double)(100/transformation.size()))/100;
                 while (plan.next()) {
                     MVFile mvFile = plan.getStructure();
                     u2Client.createFile(dbSettings.getMVAccount(), mvFile);

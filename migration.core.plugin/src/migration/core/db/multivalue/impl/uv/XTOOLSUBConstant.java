@@ -12,7 +12,8 @@ public enum XTOOLSUBConstant {
 	NewAcct(30),
 	DeleteAcct(31),
 	CreateFile(32),
-	GetHome(63);
+	GetHome(63),
+	GetFileTypeInfo(65);
 	
 	private int m_code;
 
