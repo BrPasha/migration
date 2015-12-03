@@ -2,6 +2,7 @@
 *{
    -fx-main-background: #0B2D5A;
    -fx-buttonhover-background: #0099FF;
+   -fx-labeltext-background: #2A7EBE;
 }
 
 .label-title{
@@ -14,8 +15,12 @@
 	-fx-text-fill: white;
 	-fx-font-family: Trebuchet MS;
 	-fx-font-size: 18;
-	-fx-background-color: -fx-buttonhover-background;
-	-fx-pref-width: 180; 
+	-fx-background-color: -fx-labeltext-background;
+}
+
+.pane-text{
+	-fx-background-color: -fx-labeltext-background;
+	-fx-pref-width: 180;
 }
 
 
