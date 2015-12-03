@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import editors.database.ISelectedListener;
+import editors.database.JoiningController;
 import editors.database.MVEditor;
 import editors.database.RDBEditor;
 import javafx.application.Platform;
@@ -185,7 +186,7 @@ public class ApplicationController {
     }
     
     @FXML
-	private void btn_Settings_clicked(){
+	public void btn_Settings_clicked(){
     	try {
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Settings.fxml"));
 			//((SettingsController)fxmlLoader.getController()).setDBSettings(dbSettings);

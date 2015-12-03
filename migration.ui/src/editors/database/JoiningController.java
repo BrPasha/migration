@@ -1,14 +1,15 @@
-package application;
+package editors.database;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
+import migration.core.model.rdb.RDBRelation;
+import migration.core.model.rdb.RDBRelationType;
 
 public class JoiningController implements Initializable{
 
@@ -42,10 +43,17 @@ public class JoiningController implements Initializable{
 	
 	private Stage m_stage;
 	
+	private RDBRelation m_relation;
+	
+	private JoinListener m_listener;
+	
 	public void setStage(Stage stage){
         this.m_stage = stage;
     }
 	
+    public void setListener(JoinListener listener){
+        this.m_listener = listener;
+    }
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -67,8 +75,18 @@ public class JoiningController implements Initializable{
 		combo_Joins.setValue(joins[0]);
 	}
 	
+	public void initRelation(RDBRelation relation){
+	    m_relation = relation;
+        lbl_ColumnSource.setText(relation.getColumn1());
+        lbl_ColumnTarget.setText(relation.getColumn2());    
+        lbl_SourceTable.setText(relation.getTable1());
+        lbl_TargetTable.setText(relation.getTable2());
+	}
+	
 	@FXML
 	private void btn_OkClicked(){
+	    RDBRelationType type = RDBRelationType.values()[combo_Joins.getSelectionModel().getSelectedIndex()];
+	    m_listener.onApply(new RDBRelation(m_relation.getTable1(), m_relation.getColumn1(), m_relation.getTable2(), m_relation.getColumn2(), type));
 		m_stage.close();
 	}
 

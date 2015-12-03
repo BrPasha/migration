@@ -1,7 +1,6 @@
 package application;
 
 import javafx.application.Application;
-import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -27,7 +26,9 @@ public class Main extends Application {
 			primaryStage.setScene(scene);
 			primaryStage.setTitle("Migration Tool");
 			primaryStage.getIcons().add(new Image("file:icon/Rocket25_black.png"));
+			//primaryStage.setFullScreen(true);
 			primaryStage.show();
+			controller.btn_Settings_clicked();
 
 		} catch(Exception e) {
 			e.printStackTrace();
