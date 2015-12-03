@@ -1,7 +1,6 @@
 package migration.core.model.transfer;
 
 import java.math.BigDecimal;
-import java.sql.Blob;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -214,8 +213,19 @@ public class Data implements IMVResultSet {
 				record.replace(mvIdx++, internalTime);
 			}
 		} else if (column.getDataType() == Types.BLOB) {
-			Blob blob = m_baseTableResultSet.getBlob(relIdx);
-			record.replace(mvIdx++, "");
+			try {
+				byte[] bytes = m_baseTableResultSet.getBytes(relIdx);
+				StringBuilder strbuf = new StringBuilder();
+				for (byte b : bytes) {
+					strbuf.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+				}
+				UniString bitString = session.iconv(
+						strbuf.toString(), 
+						"BB");
+				record.replace(mvIdx++, bitString);
+			} catch (Exception ex) {
+				record.replace(mvIdx++, "");
+			}
 		} else if (column.getDataType() == Types.DATE) {
 			Date timestamp = m_baseTableResultSet.getDate(relIdx);
 			if (m_baseTableResultSet.wasNull()) {
