@@ -2,17 +2,17 @@ package application;
 
 public class DatabasesSettings {
 
-    private String rHost = "wal-vm-sql2mv";//"che-l-im01"; //"wal-vm-sql2mv";
+    private String rHost = "localhost";//"che-l-im01"; //"wal-vm-sql2mv";
     private String rDBname = "sakila"; 
     private Integer rPort = 3306;
     private String rUser  = "root"; //"mysql"; //"root";
     private String rPsw = "admin"; //"mysql"; //"admin";
     
-    private String mvHost = "che-l-im01";
+    private String mvHost = "localhost";
     private Integer mvPort = 31438;
     private String mvAccount = rDBname;
     private String mvUser = "u2user";
-    private String mvPsw = "!u2user";
+    private String mvPsw = "!u2password";
     
     public void setMVHost(String host){
         this.mvHost=host;

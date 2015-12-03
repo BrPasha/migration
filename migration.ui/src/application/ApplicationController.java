@@ -364,7 +364,11 @@ public class ApplicationController {
                 catch(Exception ex){
                     
                 }
-                u2Client.createAccount(dbSettings.getMVAccount());
+                try {
+                	u2Client.createAccount(dbSettings.getMVAccount());
+                } catch (Exception ex) {
+                	ex.printStackTrace();
+                }
                 
                 TransferSet transformation1 = m_transfers.get(getSelectedMVTab());
                 transformation1.stream().forEach(tr -> System.out.println(tr.getBaseTable() + ": " + tr.getEmbeddedTables()));
