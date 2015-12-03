@@ -21,7 +21,6 @@ import migration.core.model.rdb.RDBRelation;
 public class VisualLink
 {
     private static int DISTANCE = 10;
-    private static String SELECTED_COLOR = "#9BD5FF";
     
     private RDBRelation m_relation = null;
     private TableNode m_table1;
@@ -29,8 +28,10 @@ public class VisualLink
     private Pane m_parent;
     private Group m_lines;
     private boolean m_selected = false;
+    private boolean m_highlighted = false;
     private String m_baseStyle = "-fx-stroke: #0099FF; -fx-stroke-width: 1;";
     private String m_selectedStyle = "-fx-stroke: #9BD5FF; -fx-stroke-width: 2;";
+    private String m_highlightedStyle = "-fx-stroke: #99FFA1; -fx-stroke-width: 2;";
     
     public VisualLink(RDBRelation relation, Pane parent, TableNode table1, TableNode table2){
         this.m_relation = relation;
@@ -62,18 +63,29 @@ public class VisualLink
         
     }
     
+    public RDBRelation getRelation(){
+        return m_relation;
+    }
+    
     public void update(){
         if (m_lines != null){
             m_parent.getChildren().remove(m_lines);
         }
         m_lines = construct();
         m_parent.getChildren().add(m_lines);
+        m_lines.setStyle(m_selected ? m_selectedStyle : m_baseStyle);
         if (m_selected){
             m_lines.toFront();
             DropShadow shadow = new DropShadow();
             shadow.setRadius(10);
-            //shadow.setColor(Color.web("#0099FF"));
-            shadow.setColor(Color.WHITE);
+            shadow.setColor(Color.web("#0099FF"));
+            m_lines.setEffect(shadow);
+        }
+        else if(m_highlighted){
+            m_lines.toFront();
+            DropShadow shadow = new DropShadow();
+            shadow.setRadius(10);
+            shadow.setColor(Color.web("#0099FF"));
             m_lines.setEffect(shadow);
         }
         else{
@@ -102,7 +114,12 @@ public class VisualLink
     
     private Line getLine(Point2D point1, Point2D point2){
         Line line = new Line(point1.getX(), point1.getY(), point2.getX(), point2.getY());
-        line.setStyle(m_selected ? m_selectedStyle : m_baseStyle);
+        if (m_highlighted){
+            line.setStyle(m_highlightedStyle);
+        }
+        else{
+            line.setStyle(m_selected ? m_selectedStyle : m_baseStyle);
+        }
         return line;
     }
     

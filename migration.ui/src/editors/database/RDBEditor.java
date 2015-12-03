@@ -65,7 +65,6 @@ public class RDBEditor
         VisualLink link = new VisualLink(relation, m_pane, table1, table2);
         registerLink(link,relation.getTable1());
         registerLink(link,relation.getTable2());
-        m_pane.getChildren().add(link.construct());
     }
     
     private void registerLink(VisualLink link, String tableName){
@@ -136,7 +135,10 @@ public class RDBEditor
                                     @Override
                                     public void onApply(RDBRelation relation)
                                     {
-                                        
+                                        addLink(relation);
+                                        m_structure.getRelations().add(relation);
+                                        m_selectedColumn.getTable().selectColumn(false, m_selectedColumn.getColumn());
+                                        m_selectedColumn = null;
                                     }
                                 });
                                 joinController.initRelation(relation);
@@ -154,6 +156,12 @@ public class RDBEditor
                         }
                     }
                 }
+                else {
+                    if (m_selectedColumn != null){
+                        m_selectedColumn.getTable().selectColumn(false, m_selectedColumn.getColumn());
+                        m_selectedColumn = null;
+                    }
+                }
             }
 
             @Override
@@ -163,6 +171,14 @@ public class RDBEditor
                 if (links != null){
                     for(VisualLink link:links){
                         link.setSelected(highlighted);
+                        String table = link.getRelation().getTable1().equals(model.getName()) ? link.getRelation().getTable2() : link.getRelation().getTable1();
+                        TableNode tableNode = m_tables.get(table);
+                        if (highlighted){
+                            tableNode.addShadow();
+                        }
+                        else{
+                            tableNode.removeShadow();
+                        }
                     }
                 }
             }

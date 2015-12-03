@@ -37,6 +37,8 @@ public abstract class UserControl extends Region {
     private Point2D startPoint = null;
     private Point2D size = null;
     
+    private boolean m_block = false;
+    
     public UserControl() {
         this.loadFXML();
         init();
@@ -68,9 +70,12 @@ public abstract class UserControl extends Region {
     private void init(){
         this.setOnMouseEntered(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
-                if (startPoint == null){
+                if (startPoint == null && !m_block){
                     addShadow();
                     setSelecting(true);
+                    m_block = true;
+                    UserControl.this.toFront();
+                    m_block = false;
                 }
             }
         });
@@ -169,7 +174,8 @@ public abstract class UserControl extends Region {
         Point2D point = this.localToScene(new Point2D(0,0));
         return x >= point.getX() && x <= point.getX() + this.getWidth() && y >= point.getY() && y <= point.getY() + this.getHeight();
     }
-    protected void addShadow(){
+    public void addShadow(){
+        m_block = true;
         UserControl.this.toFront();
         DropShadow shadow = new DropShadow();
         shadow.setWidth(0);
@@ -177,9 +183,10 @@ public abstract class UserControl extends Region {
         shadow.setRadius(30);
         shadow.setColor(Color.web(getSelectedColor()));
         UserControl.this.setEffect(shadow);
+        m_block = false;
     }
     
-    protected void removeShadow(){
+    public void removeShadow(){
         UserControl.this.setEffect(null);
     }
     

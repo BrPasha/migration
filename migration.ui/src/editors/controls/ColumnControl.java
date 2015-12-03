@@ -29,7 +29,7 @@ public class ColumnControl
     
     private final static String HOVER = "-fx-border-width: 1; -fx-border-color: #418CC5;";
     private final static String SELECTED = "-fx-border-width: 1; -fx-border-color: #99FFA1;";
-    private final static String NORMAL = "";
+    private final static String NORMAL = "-fx-border-width: 1; -fx-border-color: #2D7EBE;";
     
     public ColumnControl(Pane parent, RDBColumn column, ISelectedListener listener){
         m_column = column;
@@ -39,6 +39,7 @@ public class ColumnControl
         m_label.setTextAlignment(TextAlignment.CENTER);
         m_label.setTextFill(Color.WHITE);
         m_label.setMaxWidth(Double.POSITIVE_INFINITY);
+        m_label.setStyle(NORMAL);
         m_label.setOnMouseEntered(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent e) {
                 if (!m_selected){
