@@ -1,8 +1,11 @@
 package application;
 
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -62,7 +65,21 @@ public class ProgressForm
         task.setOnSucceeded(event -> {
             pForm.getDialogStage().close();
         });
-        
+        task.setOnFailed(event -> {
+            pForm.getDialogStage().close();
+            String message = null;
+            if (event.getTarget() instanceof Worker){
+                message = ((Worker)event.getTarget()).getException().getMessage();
+            }
+            if (message != null && !message.isEmpty()){
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Migration Tool Error");
+                alert.setHeaderText(null);
+                alert.setContentText(message);
+                alert.showAndWait();
+            }
+       
+        });
         
         pForm.getDialogStage().show();
 

@@ -254,8 +254,7 @@ public class UniVerseDatabaseClient implements IMVDatabaseClient {
 			try {
 				UniDataSet dataSet = session.dataSet();
 				Record record = null;
-				int counter = 0;
-				while (counter++ < MAX_RECORDS && (record = rs.nextRecord(session, metadataProvider)) != null) {
+				while ((record = rs.nextRecord(session, metadataProvider)) != null) {
 					dataSet.append(record.getId(), record.getData());
 				}
 				file.write(dataSet);
